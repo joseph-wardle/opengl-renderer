@@ -12,7 +12,18 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+add_library(opengl_renderer STATIC)
 
+target_sources(opengl_renderer
+    PUBLIC
+    FILE_SET opengl_renderer_modules TYPE CXX_MODULES FILES
+        src/core/app.cppm
+)
+
+target_compile_options(opengl_renderer PUBLIC
+    -stdlib=libc++
+)
 
 add_executable(opengl_renderer_executable src/main.cpp)
+target_link_libraries(opengl_renderer_executable PRIVATE opengl_renderer)
 target_compile_options(opengl_renderer_executable PRIVATE -stdlib=libc++)
