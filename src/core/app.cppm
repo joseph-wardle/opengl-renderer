@@ -1,6 +1,8 @@
 export module core.app;
 
 import std;
+import platform.glfw;
+import gpu.gl;
 
 export namespace core {
 
@@ -11,19 +13,81 @@ struct AppConfig {
     bool vsync{true};
 };
 
+using Clock = std::chrono::steady_clock;
+
+struct DeltaTime {
+    float seconds{0.0f};
+};
+
+template <typename Demo>
+concept DemoConcept =
+    requires(Demo& d, DeltaTime dt, int w, int h) {
+        { d.on_update(dt) }   -> std::same_as<void>;
+        { d.on_render() }     -> std::same_as<void>;
+        { d.on_resize(w, h) } -> std::same_as<void>;
+    };
+
+template <DemoConcept Demo>
 class Application {
 public:
-    Application(AppConfig config) : config_(std::move(config)) {}
+    Application(AppConfig config, Demo demo)
+        : config_(std::move(config)), demo_(std::move(demo)) {}
 
     int run();
 
 private:
     AppConfig config_;
+    Demo demo_;
 };
 
-int Application::run() {
-    std::println("Starting application with title: '{}', size: {}x{}, vsync: {}",
-        config_.title, config_.width, config_.height, config_.vsync);
+// Implementation in the same module for now.
+
+template <DemoConcept Demo>
+int Application<Demo>::run() {
+    platform::GlfwContext glfw{};
+    if (!glfw.is_valid()) {
+        return 1;
+    }
+
+    platform::WindowConfig wc;
+    wc.width  = config_.width;
+    wc.height = config_.height;
+    wc.title  = config_.title;
+
+    auto window_expected = platform::Window::create(wc);
+    if (!window_expected) {
+        return 1;
+    }
+    platform::Window window = std::move(*window_expected);
+
+    // Hook resize callback to forward into demo
+    window.set_resize_callback(
+        [this](int w, int h) { demo_.on_resize(w, h); });
+
+    // Initialize GLAD through our gpu.gl wrapper
+    if (!gpu::gl::init(window.get_load_proc())) {
+        return 1;
+    }
+
+    window.set_vsync(config_.vsync);
+    gpu::gl::viewport(0, 0, config_.width, config_.height);
+
+    auto last_time = Clock::now();
+
+    while (!window.should_close()) {
+        auto now  = Clock::now();
+        auto dt   = std::chrono::duration<float>(now - last_time).count();
+        last_time = now;
+
+        demo_.on_update(DeltaTime{dt});
+
+        gpu::gl::clear(gpu::gl::COLOR_BUFFER_BIT | gpu::gl::DEPTH_BUFFER_BIT);
+        demo_.on_render();
+
+        window.swap_buffers();
+        window.poll_events();
+    }
+
     return 0;
 }
 

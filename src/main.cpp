@@ -1,13 +1,7 @@
 import core.app;
+import demo.hello_window;
 
-int main() {
-    core::AppConfig config {
-        .width = 1280,
-        .height = 720,
-        .title = "LearnOpenGL",
-        .vsync = true
-    };
-    core::Application app(config);
-    app.run();
-    return 0;
+auto main() -> int {
+    core::Application app{core::AppConfig{}, demos::HelloWindow{}};
+    return app.run();
 }
