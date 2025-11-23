@@ -21,10 +21,16 @@ struct DeltaTime {
 
 template <typename Demo>
 concept DemoConcept =
-    requires(Demo& d, DeltaTime dt, int w, int h) {
-        { d.on_update(dt) }   -> std::same_as<void>;
-        { d.on_render() }     -> std::same_as<void>;
-        { d.on_resize(w, h) } -> std::same_as<void>;
+    requires(
+        Demo& d,
+        DeltaTime dt,
+        const platform::InputState& input,
+        int w,
+        int h
+    ) {
+        { d.on_update(dt, input) } -> std::same_as<void>;
+        { d.on_render() }          -> std::same_as<void>;
+        { d.on_resize(w, h) }      -> std::same_as<void>;
     };
 
 template <DemoConcept Demo>
@@ -60,11 +66,15 @@ int Application<Demo>::run() {
     }
     platform::Window window = std::move(*window_expected);
 
-    // Hook resize callback to forward into demo
-    window.set_resize_callback(
-        [this](int w, int h) { demo_.on_resize(w, h); });
+    window.set_resize_callback([this](int w, int h) { demo_.on_resize(w, h); });
 
-    // Initialize GLAD through our gpu.gl wrapper
+    platform::InputState input{};
+    window.set_key_callback([&input](int key, int scancode, int action, int mods) {
+        (void)scancode; (void)mods; // unused for now
+        input.handle_key_event(key, action);
+    });
+
+    // Initialize GLAD
     if (!gpu::gl::init(window.get_load_proc())) {
         return 1;
     }
@@ -75,17 +85,23 @@ int Application<Demo>::run() {
     auto last_time = Clock::now();
 
     while (!window.should_close()) {
+        input.begin_frame();
+        window.poll_events();
+
         auto now  = Clock::now();
         auto dt   = std::chrono::duration<float>(now - last_time).count();
         last_time = now;
 
-        demo_.on_update(DeltaTime{dt});
+        if (input.is_down(platform::Key::escape)) {
+            window.request_close();
+        }
+
+        demo_.on_update(DeltaTime{dt}, input);
 
         gpu::gl::clear(gpu::gl::COLOR_BUFFER_BIT | gpu::gl::DEPTH_BUFFER_BIT);
         demo_.on_render();
 
         window.swap_buffers();
-        window.poll_events();
     }
 
     return 0;

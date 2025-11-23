@@ -2,11 +2,12 @@ export module demo.hello_window;
 
 import gpu.gl;
 import core.app;
+import platform.glfw;
 
 export namespace demos {
 
 struct HelloWindow {
-    void on_update(core::DeltaTime) {
+    void on_update(core::DeltaTime, const platform::InputState&) {
         // handle input later
     }
 
