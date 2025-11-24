@@ -13,9 +13,10 @@ load_text_file(const std::filesystem::path& path) {
     if (!file) {
         return std::unexpected("Failed to open shader file: " + path.string());
     }
-    std::string contents(
-        std::istreambuf_iterator<char>(file),
-        std::istreambuf_iterator<char>()
+    std::string contents;
+    contents.assign(
+        std::istreambuf_iterator<char>{file},
+        std::istreambuf_iterator<char>{}
     );
     return contents;
 }

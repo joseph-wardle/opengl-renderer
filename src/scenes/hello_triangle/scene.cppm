@@ -10,31 +10,6 @@ import render.shader;
 
 export namespace scenes {
 
-inline constexpr char kVertexSource[] = R"(
-#version 330 core
-layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec3 aColor;
-
-out vec3 vColor;
-
-void main()
-{
-    gl_Position = vec4(aPos, 1.0);
-    vColor = aColor;
-}
-)";
-
-inline constexpr char kFragmentSource[] = R"(
-#version 330 core
-in vec3 vColor;
-out vec4 FragColor;
-
-void main()
-{
-    FragColor = vec4(vColor, 1.0);
-}
-)";
-    
 struct HelloTriangle {
     void on_init() {
         constexpr std::array<float, 18> vertices{
@@ -79,8 +54,12 @@ struct HelloTriangle {
         
         render::VertexArray::unbind();
         render::VertexBuffer::unbind();
-        
-        auto shader_result = render::Shader::from_source(kVertexSource, kFragmentSource);
+
+        const auto shader_dir = std::filesystem::path(__FILE__).parent_path();
+        auto shader_result = render::Shader::from_files(
+            shader_dir / "triangle.vert",
+            shader_dir / "triangle.frag"
+        );
         if (!shader_result) {
             std::println(std::cerr, "Failed to create shader for HelloTriangle: {}", shader_result.error());
             return;

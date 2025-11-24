@@ -42,15 +42,15 @@ target_sources(opengl_renderer
     PUBLIC
     FILE_SET opengl_renderer_modules TYPE CXX_MODULES FILES
         src/core/app.cppm
-        src/scenes/hello_window.cppm
-        src/scenes/hello_triangle.cppm
+        src/scenes/hello_window/scene.cppm
+        src/scenes/hello_triangle/scene.cppm
         src/render/buffer.cppm
         src/render/vertex_array.cppm
         src/render/shader.cppm
         src/gpu/gl.cppm
         src/math/glm.cppm
         src/platform/glfw.cppm
-        src/scenes/hello_square.cppm
+        src/scenes/hello_square/scene.cppm
 )
 
 target_compile_options(opengl_renderer PUBLIC

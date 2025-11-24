@@ -10,30 +10,6 @@ import render.shader;
 
 export namespace scenes {
 
-inline constexpr char kVertexSourceSquare[] = R"(
-#version 330 core
-layout (location = 0) in vec3 aPos;
-
-void main()
-{
-    gl_Position = vec4(aPos, 1.0);
-}
-)";
-
-inline constexpr char kFragmentSourceSquare[] = R"(
-#version 330 core
-out vec4 FragColor;
-uniform float uTime;
-
-void main()
-{
-    float r = 0.5 + 0.5 * sin(uTime * 0.8);
-    float g = 0.5 + 0.5 * sin(uTime * 1.3 + 2.0);
-    float b = 0.5 + 0.5 * sin(uTime * 1.7 + 4.0);
-    FragColor = vec4(r, g, b, 1.0);
-}
-)";
-    
 struct HelloSquare {
     explicit HelloSquare(bool wireframe = false) : wireframe_(wireframe) {}
 
@@ -92,7 +68,11 @@ struct HelloSquare {
         render::VertexBuffer::unbind();
         render::IndexBuffer::unbind();
         
-        auto shader_result = render::Shader::from_source(kVertexSourceSquare, kFragmentSourceSquare);
+        const auto shader_dir = std::filesystem::path(__FILE__).parent_path();
+        auto shader_result = render::Shader::from_files(
+            shader_dir / "square.vert",
+            shader_dir / "square.frag"
+        );
         if (!shader_result) {
             std::println(std::cerr, "Failed to create shader for HelloSquare: {}", shader_result.error());
             return;
