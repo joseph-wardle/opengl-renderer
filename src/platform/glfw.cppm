@@ -12,6 +12,10 @@ export namespace platform {
 class GlfwContext {
 public:
     GlfwContext() {
+        glfwSetErrorCallback([](int code, const char* desc) {
+            std::println(std::cerr, "GLFW error {}: {}", code, desc);
+        });
+
         if (glfwInit() == GLFW_TRUE) {
             valid_ = true;
             glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -65,13 +69,13 @@ public:
 
     [[nodiscard]] static std::expected<Window, Error> create(const WindowConfig& cfg) {
         GLFWwindow* handle = glfwCreateWindow(
-            cfg.width, 
-            cfg.height, 
-            cfg.title.c_str(), 
-            nullptr, 
+            cfg.width,
+            cfg.height,
+            cfg.title.c_str(),
+            nullptr,
             nullptr
         );
-        
+
         if (!handle) {
             return std::unexpected(Error{"glfwCreateWindow failed"});
         }
@@ -101,7 +105,7 @@ public:
         resize_callback_ = cb;
         resize_userdata_ = userdata;
     }
-    
+
     void set_key_callback(KeyCallback cb, void* userdata = nullptr) noexcept {
         key_callback_ = cb;
         key_userdata_ = userdata;
@@ -188,7 +192,7 @@ enum class Key : int {
 
 struct InputState {
     static constexpr int max_keys = GLFW_KEY_LAST + 1;
-    
+
     std::array<bool, max_keys> current{};
     std::array<bool, max_keys> previous{};
 
@@ -198,7 +202,7 @@ struct InputState {
 
     void handle_key_event(int key, int action) noexcept {
         if (key < 0 || key >= max_keys) return;
-        
+
         if (action == GLFW_PRESS) {
             current[static_cast<std::size_t>(key)] = true;
         } else if (action == GLFW_RELEASE) {
