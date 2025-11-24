@@ -7,6 +7,10 @@ import platform.glfw;
 export namespace scenes {
 
 struct HelloWindow {
+    void on_init() {
+        // initialization code later
+    }
+    
     void on_update(core::DeltaTime, const platform::InputState&) {
         // handle input later
     }

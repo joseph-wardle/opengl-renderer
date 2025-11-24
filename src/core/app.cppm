@@ -28,6 +28,7 @@ concept SceneConcept =
         int w,
         int h
     ) {
+        { scene.on_init() }            -> std::same_as<void>;
         { scene.on_update(dt, input) } -> std::same_as<void>;
         { scene.on_render() }          -> std::same_as<void>;
         { scene.on_resize(w, h) }      -> std::same_as<void>;
@@ -81,6 +82,9 @@ int Application<Scene>::run() {
 
     window.set_vsync(config_.vsync);
     gpu::gl::viewport(0, 0, config_.width, config_.height);
+    
+    scene_.on_init();
+    scene_.on_resize(config_.width, config_.height);
 
     auto last_time = Clock::now();
 
