@@ -67,13 +67,25 @@ int Application<Scene>::run() {
     }
     platform::Window window = std::move(*window_expected);
 
-    window.set_resize_callback([this](int w, int h) { scene_.on_resize(w, h); });
+    window.set_resize_callback(
+        [](int w, int h, void* user) {
+            if (auto* scene = static_cast<Scene*>(user)) {
+                scene->on_resize(w, h);
+            }
+        },
+        &scene_
+    );
 
     platform::InputState input{};
-    window.set_key_callback([&input](int key, int scancode, int action, int mods) {
-        (void)scancode; (void)mods; // unused for now
-        input.handle_key_event(key, action);
-    });
+    window.set_key_callback(
+        [](int key, int scancode, int action, int mods, void* user) {
+            (void)scancode; (void)mods; // unused for now
+            if (auto* state = static_cast<platform::InputState*>(user)) {
+                state->handle_key_event(key, action);
+            }
+        },
+        &input
+    );
 
     // Initialize GLAD
     if (!gpu::gl::init(window.get_load_proc())) {

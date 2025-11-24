@@ -1,4 +1,4 @@
-export module scene.hello_triangle;
+export module scenes.hello_triangle;
 
 import std;
 import gpu.gl;

@@ -1,5 +1,5 @@
 import core.app;
-import scene.hello_triangle;
+import scenes.hello_triangle;
 
 auto main() -> int {
     core::Application app{core::AppConfig{}, scenes::HelloTriangle{}};

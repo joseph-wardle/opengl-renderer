@@ -1,4 +1,4 @@
-export module scene.hello_window;
+export module scenes.hello_window;
 
 import gpu.gl;
 import core.app;

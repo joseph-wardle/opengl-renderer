@@ -38,8 +38,8 @@ struct WindowConfig {
     std::string_view title{"LearnOpenGL"};
 };
 
-using ResizeCallback = std::function<void(int, int)>;
-using KeyCallback    = std::function<void(int, int, int, int)>;
+using ResizeCallback = void(*)(int, int, void*);
+using KeyCallback    = void(*)(int, int, int, int, void*);
 
 class Window {
 public:
@@ -48,17 +48,16 @@ public:
     Window(const Window&) = delete;
     Window& operator=(const Window&) = delete;
 
-    Window(Window&& other) noexcept { swap(other); }
+    Window(Window&& other) noexcept { move_from(other); }
     Window& operator=(Window&& other) noexcept {
-        if (this != &other) swap(other);
+        if (this != &other) {
+            destroy();
+            move_from(other);
+        }
         return *this;
     }
 
-    ~Window() {
-        if (handle_) {
-            glfwDestroyWindow(handle_);
-        }
-    }
+    ~Window() { destroy(); }
 
     static std::optional<Window> create(const WindowConfig& cfg) {
         GLFWwindow* handle = glfwCreateWindow(
@@ -76,6 +75,8 @@ public:
 
         Window window;
         window.handle_ = handle;
+        window.refresh_user_pointer();
+        window.install_callbacks();
         return window;
     }
 
@@ -92,35 +93,14 @@ public:
     void swap_buffers() { glfwSwapBuffers(handle_); }
     void poll_events() { glfwPollEvents(); }
 
-    void set_resize_callback(ResizeCallback cb) {
-        resize_callback_ = std::move(cb);
-        glfwSetWindowUserPointer(handle_, this);
-        glfwSetFramebufferSizeCallback(
-            handle_,
-            [](GLFWwindow* win, int width, int height) {
-                auto* self = static_cast<Window*>(glfwGetWindowUserPointer(win));
-                if (self && self->resize_callback_) {
-                    self->resize_callback_(width, height);
-                }
-                gpu::gl::viewport(0, 0, width, height);
-            });
+    void set_resize_callback(ResizeCallback cb, void* userdata = nullptr) noexcept {
+        resize_callback_ = cb;
+        resize_userdata_ = userdata;
     }
     
-    void set_key_callback(KeyCallback cb) {
-        key_callback_ = std::move(cb);
-        
-        glfwSetWindowUserPointer(handle_, this);
-        
-        glfwSetKeyCallback(
-            handle_,
-            [](GLFWwindow* win, int key, int scancode, int action, int mods) {
-                auto* self =
-                static_cast<Window*>(glfwGetWindowUserPointer(win));
-                if (self && self->key_callback_) {
-                    self->key_callback_(key, scancode, action, mods);
-                }
-            }
-        );
+    void set_key_callback(KeyCallback cb, void* userdata = nullptr) noexcept {
+        key_callback_ = cb;
+        key_userdata_ = userdata;
     }
 
     using LoadProc = GLFWglproc (*)(const char*);
@@ -133,10 +113,63 @@ private:
     GLFWwindow*    handle_{nullptr};
     ResizeCallback resize_callback_{};
     KeyCallback    key_callback_{};
+    void*          resize_userdata_{nullptr};
+    void*          key_userdata_{nullptr};
 
-    void swap(Window& other) noexcept {
-        std::swap(handle_, other.handle_);
-        std::swap(resize_callback_, other.resize_callback_);
+    void refresh_user_pointer() noexcept {
+        if (handle_) {
+            glfwSetWindowUserPointer(handle_, this);
+        }
+    }
+
+    void install_callbacks() noexcept {
+        glfwSetFramebufferSizeCallback(
+            handle_,
+            [](GLFWwindow* win, int width, int height) {
+                auto* self = static_cast<Window*>(glfwGetWindowUserPointer(win));
+                if (self && self->resize_callback_) {
+                    self->resize_callback_(width, height, self->resize_userdata_);
+                }
+                gpu::gl::viewport(0, 0, width, height);
+            });
+
+        glfwSetKeyCallback(
+            handle_,
+            [](GLFWwindow* win, int key, int scancode, int action, int mods) {
+                auto* self =
+                    static_cast<Window*>(glfwGetWindowUserPointer(win));
+                if (self && self->key_callback_) {
+                    self->key_callback_(key, scancode, action, mods, self->key_userdata_);
+                }
+            }
+        );
+    }
+
+    void destroy() noexcept {
+        if (handle_) {
+            glfwDestroyWindow(handle_);
+            handle_ = nullptr;
+        }
+        resize_callback_ = nullptr;
+        key_callback_ = nullptr;
+        resize_userdata_ = nullptr;
+        key_userdata_ = nullptr;
+    }
+
+    void move_from(Window& other) noexcept {
+        handle_ = std::exchange(other.handle_, nullptr);
+        resize_callback_ = other.resize_callback_;
+        key_callback_ = other.key_callback_;
+        resize_userdata_ = other.resize_userdata_;
+        key_userdata_ = other.key_userdata_;
+        if (handle_) {
+            refresh_user_pointer();
+            install_callbacks();
+        }
+        other.resize_callback_ = nullptr;
+        other.key_callback_ = nullptr;
+        other.resize_userdata_ = nullptr;
+        other.key_userdata_ = nullptr;
     }
 };
 

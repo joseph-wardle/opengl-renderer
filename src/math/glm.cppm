@@ -1,4 +1,3 @@
-// src/math/math.glm.cppm
 module;
 
 #define GLM_FORCE_RADIANS
