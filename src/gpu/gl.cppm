@@ -232,4 +232,14 @@ inline void polygon_mode(Face face, PolygonMode mode) {
     glPolygonMode(static_cast<GLenum>(face), static_cast<GLenum>(mode));
 }
 
+using UniformLocation = GLint;
+
+inline UniformLocation get_uniform_location(ProgramId program, std::string_view name) {
+    return glGetUniformLocation(program, name.data());
+}
+
+inline void set_uniform(UniformLocation location, float v0) {
+    glUniform1f(location, v0);
+}
+
 } // namespace gpu::gl

@@ -23,10 +23,14 @@ void main()
 inline constexpr char kFragmentSourceSquare[] = R"(
 #version 330 core
 out vec4 FragColor;
+uniform float uTime;
 
 void main()
 {
-    FragColor = vec4(0.2, 0.7, 1.0, 1.0);
+    float r = 0.5 + 0.5 * sin(uTime * 0.8);
+    float g = 0.5 + 0.5 * sin(uTime * 1.3 + 2.0);
+    float b = 0.5 + 0.5 * sin(uTime * 1.7 + 4.0);
+    FragColor = vec4(r, g, b, 1.0);
 }
 )";
     
@@ -101,8 +105,8 @@ struct HelloSquare {
         );
     }
     
-    void on_update(core::DeltaTime, const platform::InputState&) {
-        // handle input later
+    void on_update(core::DeltaTime dt, const platform::InputState&) {
+        time_ += dt.seconds;
     }
 
     void on_render() {
@@ -117,6 +121,9 @@ struct HelloSquare {
         }
 
         shader_.use();
+        if (auto loc = gpu::gl::get_uniform_location(shader_.id(), "uTime"); loc != -1) {
+            gpu::gl::set_uniform(loc, time_);
+        }
         vao_.bind();
         ibo_.bind();
         gpu::gl::draw_elements(gpu::gl::Primitive::triangles, 6, gpu::gl::IndexType::u32);
@@ -129,6 +136,7 @@ struct HelloSquare {
     }
 private:
     bool                 wireframe_{false};
+    float                time_{0.0f};
     render::VertexArray  vao_{};
     render::VertexBuffer vbo_{};
     render::IndexBuffer  ibo_{};
@@ -136,4 +144,3 @@ private:
 };
 
 }
-

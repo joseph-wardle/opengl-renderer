@@ -95,7 +95,7 @@ int Application<Scene>::run() {
 
     window.set_vsync(config_.vsync);
     gpu::gl::viewport(0, 0, config_.width, config_.height);
-    
+
     scene_.on_init();
     scene_.on_resize(config_.width, config_.height);
 
