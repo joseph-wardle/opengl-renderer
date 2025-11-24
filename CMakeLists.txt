@@ -50,6 +50,7 @@ target_sources(opengl_renderer
         src/gpu/gl.cppm
         src/math/glm.cppm
         src/platform/glfw.cppm
+        src/scenes/hello_square.cppm
 )
 
 target_compile_options(opengl_renderer PUBLIC

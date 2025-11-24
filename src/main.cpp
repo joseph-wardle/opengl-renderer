@@ -1,7 +1,7 @@
 import core.app;
-import scenes.hello_triangle;
+import scenes.hello_square;
 
 auto main() -> int {
-    core::Application app{core::AppConfig{}, scenes::HelloTriangle{}};
+    core::Application app{core::AppConfig{}, scenes::HelloSquare{false}};
     return app.run();
 }

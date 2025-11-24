@@ -17,6 +17,7 @@ using ProgramId     = GLuint;
 
 enum class BufferTarget : GLenum {
     array = GL_ARRAY_BUFFER,
+    element_array = GL_ELEMENT_ARRAY_BUFFER,
 };
 
 enum class BufferUsage : GLenum {
@@ -36,6 +37,20 @@ enum class ShaderType : GLenum {
 
 enum class Primitive : GLenum {
     triangles = GL_TRIANGLES,
+};
+
+enum class IndexType : GLenum {
+    u16 = GL_UNSIGNED_SHORT,
+    u32 = GL_UNSIGNED_INT,
+};
+
+enum class PolygonMode : GLenum {
+    fill = GL_FILL,
+    line = GL_LINE,
+};
+
+enum class Face : GLenum {
+    front_and_back = GL_FRONT_AND_BACK,
 };
 
 [[nodiscard]] inline bool init(LoadProc load_proc) {
@@ -202,6 +217,19 @@ inline void use_program(ProgramId program) {
 
 inline void draw_arrays(Primitive primitive, int first, int count) {
     glDrawArrays(static_cast<GLenum>(primitive), first, count);
+}
+
+inline void draw_elements(Primitive primitive, int count, IndexType type, std::size_t offset_bytes = 0) {
+    glDrawElements(
+        static_cast<GLenum>(primitive),
+        count,
+        static_cast<GLenum>(type),
+        reinterpret_cast<const void*>(offset_bytes)
+    );
+}
+
+inline void polygon_mode(Face face, PolygonMode mode) {
+    glPolygonMode(static_cast<GLenum>(face), static_cast<GLenum>(mode));
 }
 
 } // namespace gpu::gl
