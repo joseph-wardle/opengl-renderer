@@ -32,6 +32,12 @@ CPMAddPackage(
     "GLM_TEST_ENABLE OFF"
 )
 
+CPMAddPackage(
+    NAME stb
+    GITHUB_REPOSITORY nothings/stb
+    GIT_TAG master
+)
+
 add_library(glad STATIC external/glad/src/gl.c)
 target_include_directories(glad PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/external/glad/include)
 target_compile_features(glad PUBLIC c_std_99)
@@ -51,6 +57,7 @@ target_sources(opengl_renderer
         src/math/glm.cppm
         src/platform/glfw.cppm
         src/scenes/hello_square/scene.cppm
+        src/resources/image.cppm
 )
 
 target_compile_options(opengl_renderer PUBLIC
@@ -62,6 +69,10 @@ target_link_libraries(opengl_renderer PUBLIC
     glad
     glfw
     glm::glm
+)
+
+target_include_directories(opengl_renderer PUBLIC
+    ${stb_SOURCE_DIR}
 )
 
 add_executable(opengl_renderer_executable src/main.cpp)
