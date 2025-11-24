@@ -7,18 +7,24 @@ export namespace render {
 
 namespace detail {
 
-inline gpu::gl::ShaderId compile_shader(
+inline std::expected<gpu::gl::ShaderId, std::string> compile_shader(
     gpu::gl::ShaderType type,
     std::string_view source
 ) {
     auto shader = gpu::gl::create_shader(type);
+    if (shader == 0) {
+        return std::unexpected(std::string{"glCreateShader failed"});
+    }
+
     gpu::gl::set_shader_source(shader, source);
 
     if (!gpu::gl::compile_shader(shader)) {
-        const auto log = gpu::gl::shader_info_log(shader);
-        std::cerr << "Shader compilation failed: " << log << '\n';
+        auto log = gpu::gl::shader_info_log(shader);
+        if (log.empty()) {
+            log = "Shader compilation failed without info log";
+        }
         gpu::gl::delete_shader(shader);
-        return 0;
+        return std::unexpected(std::move(log));
     }
 
     return shader;
@@ -30,7 +36,7 @@ class Shader {
 public:
     Shader() = default;
 
-    static std::optional<Shader> from_source(
+    [[nodiscard]] static std::expected<Shader, std::string> from_source(
         std::string_view vertex_src,
         std::string_view fragment_src
     ) {
@@ -38,29 +44,37 @@ public:
             gpu::gl::ShaderType::vertex,
             vertex_src
         );
-        if (vertex == 0) return std::nullopt;
+        if (!vertex) return std::unexpected(vertex.error());
 
         auto fragment = detail::compile_shader(
             gpu::gl::ShaderType::fragment,
             fragment_src
         );
-        if (fragment == 0) {
-            gpu::gl::delete_shader(vertex);
-            return std::nullopt;
+        if (!fragment) {
+            if (*vertex != 0) gpu::gl::delete_shader(*vertex);
+            return std::unexpected(fragment.error());
         }
 
         gpu::gl::ProgramId program = gpu::gl::create_program();
-        gpu::gl::attach_shader(program, vertex);
-        gpu::gl::attach_shader(program, fragment);
+        if (program == 0) {
+            gpu::gl::delete_shader(*vertex);
+            gpu::gl::delete_shader(*fragment);
+            return std::unexpected(std::string{"glCreateProgram failed"});
+        }
 
-        gpu::gl::delete_shader(vertex);
-        gpu::gl::delete_shader(fragment);
+        gpu::gl::attach_shader(program, *vertex);
+        gpu::gl::attach_shader(program, *fragment);
+
+        gpu::gl::delete_shader(*vertex);
+        gpu::gl::delete_shader(*fragment);
 
         if (!gpu::gl::link_program(program)) {
-            const auto log = gpu::gl::program_info_log(program);
-            std::cerr << "Program link failed: " << log << '\n';
+            auto log = gpu::gl::program_info_log(program);
+            if (log.empty()) {
+                log = "Program link failed without info log";
+            }
             gpu::gl::delete_program(program);
-            return std::nullopt;
+            return std::unexpected(std::move(log));
         }
 
         Shader shader;

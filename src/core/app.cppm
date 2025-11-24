@@ -63,6 +63,7 @@ int Application<Scene>::run() {
 
     auto window_expected = platform::Window::create(wc);
     if (!window_expected) {
+        std::println(std::cerr, "Window creation failed: {}", window_expected.error().message);
         return 1;
     }
     platform::Window window = std::move(*window_expected);

@@ -59,7 +59,11 @@ public:
 
     ~Window() { destroy(); }
 
-    static std::optional<Window> create(const WindowConfig& cfg) {
+    struct Error {
+        std::string message;
+    };
+
+    [[nodiscard]] static std::expected<Window, Error> create(const WindowConfig& cfg) {
         GLFWwindow* handle = glfwCreateWindow(
             cfg.width, 
             cfg.height, 
@@ -69,7 +73,7 @@ public:
         );
         
         if (!handle) {
-            return std::nullopt;
+            return std::unexpected(Error{"glfwCreateWindow failed"});
         }
         glfwMakeContextCurrent(handle);
 

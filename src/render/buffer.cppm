@@ -9,9 +9,13 @@ class VertexBuffer {
 public:
     VertexBuffer() = default;
 
-    static VertexBuffer from_data(const void* data, std::size_t byte_size) {
+    [[nodiscard]] static std::expected<VertexBuffer, std::string>
+    from_data(const void* data, std::size_t byte_size) {
         VertexBuffer vb;
         vb.id_ = gpu::gl::create_buffer();
+        if (vb.id_ == 0) {
+            return std::unexpected(std::string{"glGenBuffers failed"});
+        }
         vb.bind();
         gpu::gl::buffer_data(
             gpu::gl::BufferTarget::array,

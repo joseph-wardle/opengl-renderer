@@ -9,9 +9,12 @@ class VertexArray {
 public:
     VertexArray() = default;
 
-    static VertexArray create() {
+    [[nodiscard]] static std::expected<VertexArray, std::string> create() {
         VertexArray vao;
         vao.id_ = gpu::gl::create_vertex_array();
+        if (vao.id_ == 0) {
+            return std::unexpected(std::string{"glGenVertexArrays failed"});
+        }
         return vao;
     }
 
