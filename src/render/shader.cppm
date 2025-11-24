@@ -7,6 +7,19 @@ export namespace render {
 
 namespace detail {
 
+inline std::expected<std::string, std::string>
+load_text_file(const std::filesystem::path& path) {
+    std::ifstream file{path, std::ios::in | std::ios::binary};
+    if (!file) {
+        return std::unexpected("Failed to open shader file: " + path.string());
+    }
+    std::string contents(
+        std::istreambuf_iterator<char>(file),
+        std::istreambuf_iterator<char>()
+    );
+    return contents;
+}
+
 inline std::expected<gpu::gl::ShaderId, std::string> compile_shader(
     gpu::gl::ShaderType type,
     std::string_view source
@@ -80,6 +93,19 @@ public:
         Shader shader;
         shader.id_ = program;
         return shader;
+    }
+
+    [[nodiscard]] static std::expected<Shader, std::string> from_files(
+        const std::filesystem::path& vertex_path,
+        const std::filesystem::path& fragment_path
+    ) {
+        auto vertex_src = detail::load_text_file(vertex_path);
+        if (!vertex_src) return std::unexpected(vertex_src.error());
+
+        auto fragment_src = detail::load_text_file(fragment_path);
+        if (!fragment_src) return std::unexpected(fragment_src.error());
+
+        return from_source(*vertex_src, *fragment_src);
     }
 
     ~Shader() {
