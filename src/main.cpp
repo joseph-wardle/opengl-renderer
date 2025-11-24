@@ -1,7 +1,7 @@
 import core.app;
-import demo.hello_window;
+import scene.hello_window;
 
 auto main() -> int {
-    core::Application app{core::AppConfig{}, demos::HelloWindow{}};
+    core::Application app{core::AppConfig{}, scenes::HelloWindow{}};
     return app.run();
 }

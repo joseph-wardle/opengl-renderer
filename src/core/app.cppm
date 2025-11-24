@@ -19,37 +19,37 @@ struct DeltaTime {
     float seconds{0.0f};
 };
 
-template <typename Demo>
-concept DemoConcept =
+template <typename Scene>
+concept SceneConcept =
     requires(
-        Demo& d,
+        Scene& scene,
         DeltaTime dt,
         const platform::InputState& input,
         int w,
         int h
     ) {
-        { d.on_update(dt, input) } -> std::same_as<void>;
-        { d.on_render() }          -> std::same_as<void>;
-        { d.on_resize(w, h) }      -> std::same_as<void>;
+        { scene.on_update(dt, input) } -> std::same_as<void>;
+        { scene.on_render() }          -> std::same_as<void>;
+        { scene.on_resize(w, h) }      -> std::same_as<void>;
     };
 
-template <DemoConcept Demo>
+template <SceneConcept Scene>
 class Application {
 public:
-    Application(AppConfig config, Demo demo)
-        : config_(std::move(config)), demo_(std::move(demo)) {}
+    Application(AppConfig config, Scene scene)
+        : config_(std::move(config)), scene_(std::move(scene)) {}
 
     int run();
 
 private:
     AppConfig config_;
-    Demo demo_;
+    Scene scene_;
 };
 
 // Implementation in the same module for now.
 
-template <DemoConcept Demo>
-int Application<Demo>::run() {
+template <SceneConcept Scene>
+int Application<Scene>::run() {
     platform::GlfwContext glfw{};
     if (!glfw.is_valid()) {
         return 1;
@@ -66,7 +66,7 @@ int Application<Demo>::run() {
     }
     platform::Window window = std::move(*window_expected);
 
-    window.set_resize_callback([this](int w, int h) { demo_.on_resize(w, h); });
+    window.set_resize_callback([this](int w, int h) { scene_.on_resize(w, h); });
 
     platform::InputState input{};
     window.set_key_callback([&input](int key, int scancode, int action, int mods) {
@@ -96,10 +96,10 @@ int Application<Demo>::run() {
             window.request_close();
         }
 
-        demo_.on_update(DeltaTime{dt}, input);
+        scene_.on_update(DeltaTime{dt}, input);
 
         gpu::gl::clear(gpu::gl::COLOR_BUFFER_BIT | gpu::gl::DEPTH_BUFFER_BIT);
-        demo_.on_render();
+        scene_.on_render();
 
         window.swap_buffers();
     }

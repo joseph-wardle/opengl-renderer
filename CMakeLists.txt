@@ -42,7 +42,7 @@ target_sources(opengl_renderer
     PUBLIC
     FILE_SET opengl_renderer_modules TYPE CXX_MODULES FILES
         src/core/app.cppm
-        src/demos/hello_window.cppm
+        src/scenes/hello_window.cppm
         src/gpu/gl.cppm
         src/math/glm.cppm
         src/platform/glfw.cppm

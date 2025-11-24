@@ -1,10 +1,10 @@
-export module demo.hello_window;
+export module scene.hello_window;
 
 import gpu.gl;
 import core.app;
 import platform.glfw;
 
-export namespace demos {
+export namespace scenes {
 
 struct HelloWindow {
     void on_update(core::DeltaTime, const platform::InputState&) {
