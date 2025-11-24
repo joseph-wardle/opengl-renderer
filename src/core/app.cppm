@@ -7,10 +7,10 @@ import gpu.gl;
 export namespace core {
 
 struct AppConfig {
-    int width{1280};
-    int height{720};
-    std::string_view title{"LearnOpenGL"};
-    bool vsync{true};
+    int         width{1280};
+    int         height{720};
+    std::string title{"LearnOpenGL"};
+    bool        vsync{true};
 };
 
 using Clock = std::chrono::steady_clock;

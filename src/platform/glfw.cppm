@@ -33,9 +33,9 @@ private:
 };
 
 struct WindowConfig {
-    int width{1280};
-    int height{720};
-    std::string_view title{"LearnOpenGL"};
+    int         width{1280};
+    int         height{720};
+    std::string title{"LearnOpenGL"};
 };
 
 using ResizeCallback = void(*)(int, int, void*);
@@ -67,7 +67,7 @@ public:
         GLFWwindow* handle = glfwCreateWindow(
             cfg.width, 
             cfg.height, 
-            cfg.title.data(), 
+            cfg.title.c_str(), 
             nullptr, 
             nullptr
         );
