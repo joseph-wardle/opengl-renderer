@@ -1,0 +1,100 @@
+export module scene.hello_triangle;
+
+import std;
+import gpu.gl;
+import core.app;
+import platform.glfw;
+import render.vertex_array;
+import render.buffer;
+import render.shader;
+
+export namespace scenes {
+
+inline constexpr char kVertexSource[] = R"(
+#version 330 core
+layout (location = 0) in vec3 aPos;
+
+void main()
+{
+    gl_Position = vec4(aPos, 1.0);
+}
+)";
+
+inline constexpr char kFragmentSource[] = R"(
+#version 330 core
+out vec4 FragColor;
+
+void main()
+{
+    FragColor = vec4(1.0, 0.5, 0.2, 1.0);
+}
+)";
+    
+struct HelloTriangle {
+    void on_init() {
+        constexpr std::array<float, 9> vertices{
+           -0.5f, -0.5f, 0.0f,
+            0.5f, -0.5f, 0.0f,
+            0.0f,  0.5f, 0.0f,
+        };
+        
+        vbo_ = render::VertexBuffer::from_data(
+            vertices.data(),
+            vertices.size() * sizeof(float)
+        );
+        
+        vao_ = render::VertexArray::create();
+        if (!vao_.is_valid() || !vbo_.is_valid()) {
+            std::println(std::cerr, "Failed to create VAO/VBO for HelloTriangle.");
+            return;
+        }
+        
+        vao_.bind();
+        vbo_.bind();
+        
+        vao_.set_attribute_float(
+            0, // index
+            3, // component count
+            static_cast<int>(3 * sizeof(float)), // stride bytes
+            0 // offset bytes
+        );
+        
+        render::VertexArray::unbind();
+        render::VertexBuffer::unbind();
+        
+        auto shader_opt = render::Shader::from_source(kVertexSource, kFragmentSource);
+        if (!shader_opt) {
+            std::println(std::cerr, "Failed to create shader for HelloTriangle.");
+            return;
+        }
+        shader_ = std::move(*shader_opt);
+    }
+    
+    void on_update(core::DeltaTime, const platform::InputState&) {
+        // handle input later
+    }
+
+    void on_render() {
+        gpu::gl::clear_color(0.2f, 0.3f, 0.3f, 1.0f);
+        gpu::gl::clear(gpu::gl::COLOR_BUFFER_BIT);
+        
+        if (!vao_.is_valid()) {
+            return;
+        }
+        
+        shader_.use();
+        vao_.bind();
+        gpu::gl::draw_arrays(gpu::gl::Primitive::triangles, 0, 3);
+        render::VertexArray::unbind();
+    }
+
+    void on_resize(int width, int height) {
+        gpu::gl::viewport(0, 0, width, height);
+    }
+private:
+    render::VertexArray  vao_{};
+    render::VertexBuffer vbo_{};
+    render::Shader       shader_{};
+};
+
+}

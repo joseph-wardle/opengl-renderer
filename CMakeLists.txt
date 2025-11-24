@@ -43,6 +43,10 @@ target_sources(opengl_renderer
     FILE_SET opengl_renderer_modules TYPE CXX_MODULES FILES
         src/core/app.cppm
         src/scenes/hello_window.cppm
+        src/scenes/hello_triangle.cppm
+        src/render/buffer.cppm
+        src/render/vertex_array.cppm
+        src/render/shader.cppm
         src/gpu/gl.cppm
         src/math/glm.cppm
         src/platform/glfw.cppm
