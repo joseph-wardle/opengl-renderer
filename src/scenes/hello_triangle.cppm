@@ -13,29 +13,35 @@ export namespace scenes {
 inline constexpr char kVertexSource[] = R"(
 #version 330 core
 layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aColor;
+
+out vec3 vColor;
 
 void main()
 {
     gl_Position = vec4(aPos, 1.0);
+    vColor = aColor;
 }
 )";
 
 inline constexpr char kFragmentSource[] = R"(
 #version 330 core
+in vec3 vColor;
 out vec4 FragColor;
 
 void main()
 {
-    FragColor = vec4(1.0, 0.5, 0.2, 1.0);
+    FragColor = vec4(vColor, 1.0);
 }
 )";
     
 struct HelloTriangle {
     void on_init() {
-        constexpr std::array<float, 9> vertices{
-           -0.5f, -0.5f, 0.0f,
-            0.5f, -0.5f, 0.0f,
-            0.0f,  0.5f, 0.0f,
+        constexpr std::array<float, 18> vertices{
+           // position           // color
+           -0.5f, -0.5f, 0.0f,    1.0f, 0.0f, 0.0f,
+            0.5f, -0.5f, 0.0f,    0.0f, 1.0f, 0.0f,
+            0.0f,  0.5f, 0.0f,    0.0f, 0.0f, 1.0f,
         };
         
         auto vbo_result = render::VertexBuffer::from_data(
@@ -61,8 +67,14 @@ struct HelloTriangle {
         vao_.set_attribute_float(
             0, // index
             3, // component count
-            static_cast<int>(3 * sizeof(float)), // stride bytes
+            static_cast<int>(6 * sizeof(float)), // stride bytes
             0 // offset bytes
+        );
+        vao_.set_attribute_float(
+            1, // index
+            3, // component count
+            static_cast<int>(6 * sizeof(float)), // stride bytes
+            3 * sizeof(float) // offset bytes
         );
         
         render::VertexArray::unbind();
