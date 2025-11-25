@@ -42,8 +42,9 @@ struct WindowConfig {
     std::string title{"LearnOpenGL"};
 };
 
-using ResizeCallback = void(*)(int, int, void*);
-using KeyCallback    = void(*)(int, int, int, int, void*);
+using ResizeCallback    = void(*)(int, int, void*);
+using KeyCallback       = void(*)(int, int, int, int, void*);
+using CursorPosCallback = void(*)(double, double, void*);
 
 class Window {
 public:
@@ -64,6 +65,7 @@ public:
     ~Window() { destroy(); }
 
     struct Error {
+        int         code{0};
         std::string message;
     };
 
@@ -77,7 +79,10 @@ public:
         );
 
         if (!handle) {
-            return std::unexpected(Error{"glfwCreateWindow failed"});
+            const char* desc = nullptr;
+            const int code = glfwGetError(&desc);
+            std::string msg = desc ? desc : "glfwCreateWindow failed";
+            return std::unexpected(Error{code, msg});
         }
         glfwMakeContextCurrent(handle);
 
@@ -111,6 +116,11 @@ public:
         key_userdata_ = userdata;
     }
 
+    void set_cursor_pos_callback(CursorPosCallback cb, void* userdata = nullptr) noexcept {
+        cursor_pos_callback_ = cb;
+        cursor_pos_userdata_ = userdata;
+    }
+
     using LoadProc = GLFWglproc (*)(const char*);
 
     [[nodiscard]] LoadProc get_load_proc() const noexcept {
@@ -121,8 +131,10 @@ private:
     GLFWwindow*    handle_{nullptr};
     ResizeCallback resize_callback_{};
     KeyCallback    key_callback_{};
+    CursorPosCallback cursor_pos_callback_{};
     void*          resize_userdata_{nullptr};
     void*          key_userdata_{nullptr};
+    void*          cursor_pos_userdata_{nullptr};
 
     void refresh_user_pointer() noexcept {
         if (handle_) {
@@ -151,6 +163,16 @@ private:
                 }
             }
         );
+
+        glfwSetCursorPosCallback(
+            handle_,
+            [](GLFWwindow* win, double x, double y) {
+                auto* self = static_cast<Window*>(glfwGetWindowUserPointer(win));
+                if (self && self->cursor_pos_callback_) {
+                    self->cursor_pos_callback_(x, y, self->cursor_pos_userdata_);
+                }
+            }
+        );
     }
 
     void destroy() noexcept {
@@ -160,24 +182,30 @@ private:
         }
         resize_callback_ = nullptr;
         key_callback_ = nullptr;
+        cursor_pos_callback_ = nullptr;
         resize_userdata_ = nullptr;
         key_userdata_ = nullptr;
+        cursor_pos_userdata_ = nullptr;
     }
 
     void move_from(Window& other) noexcept {
         handle_ = std::exchange(other.handle_, nullptr);
         resize_callback_ = other.resize_callback_;
         key_callback_ = other.key_callback_;
+        cursor_pos_callback_ = other.cursor_pos_callback_;
         resize_userdata_ = other.resize_userdata_;
         key_userdata_ = other.key_userdata_;
+        cursor_pos_userdata_ = other.cursor_pos_userdata_;
         if (handle_) {
             refresh_user_pointer();
             install_callbacks();
         }
         other.resize_callback_ = nullptr;
         other.key_callback_ = nullptr;
+        other.cursor_pos_callback_ = nullptr;
         other.resize_userdata_ = nullptr;
         other.key_userdata_ = nullptr;
+        other.cursor_pos_userdata_ = nullptr;
     }
 };
 
@@ -188,6 +216,13 @@ enum class Key : int {
     a       = GLFW_KEY_A,
     s       = GLFW_KEY_S,
     d       = GLFW_KEY_D,
+    q       = GLFW_KEY_Q,
+    e       = GLFW_KEY_E,
+    up      = GLFW_KEY_UP,
+    down    = GLFW_KEY_DOWN,
+    left    = GLFW_KEY_LEFT,
+    right   = GLFW_KEY_RIGHT,
+    left_shift = GLFW_KEY_LEFT_SHIFT,
 };
 
 struct InputState {
@@ -196,8 +231,21 @@ struct InputState {
     std::array<bool, max_keys> current{};
     std::array<bool, max_keys> previous{};
 
+    struct MouseDelta {
+        double x{0.0};
+        double y{0.0};
+    };
+
+    struct MouseState {
+        double x{0.0};
+        double y{0.0};
+        MouseDelta delta{};
+        bool first{true};
+    } mouse{};
+
     void begin_frame() noexcept {
         previous = current;
+        mouse.delta = {};
     }
 
     void handle_key_event(int key, int action) noexcept {
@@ -229,6 +277,21 @@ struct InputState {
         const auto idx = static_cast<std::size_t>(k);
         return !current[idx] && previous[idx];
     }
+
+    void handle_cursor_pos(double x, double y) noexcept {
+        if (mouse.first) {
+            mouse.x = x;
+            mouse.y = y;
+            mouse.first = false;
+            return;
+        }
+        mouse.delta.x += x - mouse.x;
+        mouse.delta.y += y - mouse.y;
+        mouse.x = x;
+        mouse.y = y;
+    }
+
+    [[nodiscard]] MouseDelta mouse_delta() const noexcept { return mouse.delta; }
 };
 
 } // namespace platform

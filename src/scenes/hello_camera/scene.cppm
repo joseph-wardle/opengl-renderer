@@ -1,4 +1,4 @@
-export module scenes.hello_cube;
+export module scenes.hello_camera;
 
 import std;
 import gpu.gl;
@@ -9,26 +9,23 @@ import render.vertex_array;
 import render.buffer;
 import render.shader;
 import render.texture;
+import render.camera;
 import resources.image;
 
 export namespace scenes {
 
-struct HelloCube {
-    HelloCube() {
-        std::mt19937 rng{std::random_device{}()};
-        std::uniform_real_distribution<float> dist{-1.0f, 1.0f};
-        // Randomize rotation axis and speed a bit for variety.
-        rotation_axis_ = core::Vec3{dist(rng), dist(rng), dist(rng)};
-        if (length(rotation_axis_) < 0.001f) {
-            rotation_axis_ = core::Vec3{0.0f, 1.0f, 0.0f};
-        } else {
-            rotation_axis_ = normalize(rotation_axis_);
-        }
-        rotation_speed_ = 0.5f + std::abs(dist(rng)) * 0.5f; // radians/sec
-        bounce_speed_   = 1.0f + std::abs(dist(rng)) * 0.5f;
-    }
+struct CubeInstance {
+    core::Vec3 position;
+    core::Vec3 axis;
+    float      rot_speed;
+    float      bounce_speed;
+    float      bounce_phase;
+};
 
+struct HelloCamera {
     void on_init() {
+        gpu::gl::enable_depth_test(true);
+
         constexpr std::array<float, 180> vertices = {
             // positions           // uvs
             // front
@@ -115,7 +112,7 @@ struct HelloCube {
             shader_dir / "cube.frag"
         );
         if (!shader_result) {
-            std::println(std::cerr, "Failed to create shader for HelloCube: {}", shader_result.error());
+            std::println(std::cerr, "Failed to create shader for HelloCamera: {}", shader_result.error());
             return;
         }
         shader_ = std::move(*shader_result);
@@ -145,14 +142,15 @@ struct HelloCube {
         texture_a_ = std::move(*tex_a);
         texture_b_ = std::move(*tex_b);
 
-        gpu::gl::enable_depth_test(true);
+        setup_instances();
+
+        camera_ = render::Camera(core::Vec3{0.0f, 0.0f, 6.0f}, aspect_ratio_);
     }
 
-    void on_update(core::DeltaTime dt, const platform::InputState&) {
+    void on_update(core::DeltaTime dt, const platform::InputState& input) {
         time_ += dt.seconds;
-        blend_ = 0.5f + 0.5f * std::sin(time_ * 0.5f);
-        bounce_offset_ = 0.25f * std::sin(time_ * bounce_speed_);
-        rotation_angle_ += rotation_speed_ * dt.seconds;
+        blend_ = 0.5f + 0.5f * std::sin(time_ * 0.4f);
+        camera_.update(dt, input);
     }
 
     void on_render() {
@@ -163,21 +161,10 @@ struct HelloCube {
             return;
         }
 
-        const core::Mat4 model = core::mul(
-            translate(core::Mat4{1.0f}, core::Vec3{0.0f, bounce_offset_, 0.0f}),
-            rotate(core::Mat4{1.0f}, rotation_angle_, rotation_axis_)
-        );
-        const core::Mat4 view  = lookAt(core::Vec3{0.0f, 0.0f, 3.0f}, core::Vec3{0.0f}, core::Vec3{0.0f, 1.0f, 0.0f});
-        const core::Mat4 proj  = perspective(radians(45.0f), aspect_ratio_, 0.1f, 100.0f);
-        const core::Mat4 mvp   = core::mul(core::mul(proj, view), model);
+        const auto view = camera_.view();
+        const auto proj = camera_.projection();
 
         shader_.use();
-        if (auto loc = gpu::gl::get_uniform_location(shader_.id(), "uMVP"); loc != -1) {
-            gpu::gl::set_uniform_mat4(loc, value_ptr(mvp));
-        }
-        if (auto loc = gpu::gl::get_uniform_location(shader_.id(), "uBlend"); loc != -1) {
-            gpu::gl::set_uniform(loc, blend_);
-        }
         if (auto loc = gpu::gl::get_uniform_location(shader_.id(), "uTex0"); loc != -1) {
             gpu::gl::set_uniform(loc, 0);
         }
@@ -188,30 +175,77 @@ struct HelloCube {
         texture_a_.bind(0);
         texture_b_.bind(1);
         vao_.bind();
-        gpu::gl::draw_arrays(gpu::gl::Primitive::triangles, 0, 36);
+
+        for (const auto& cube : cubes_) {
+            const float bounce = 0.25f * std::sin(time_ * cube.bounce_speed + cube.bounce_phase);
+            const core::Mat4 model =
+                core::mul(
+                    translate(core::Mat4{1.0f}, cube.position + core::Vec3{0.0f, bounce, 0.0f}),
+                    rotate(core::Mat4{1.0f}, time_ * cube.rot_speed, cube.axis)
+                );
+            const core::Mat4 mvp = core::mul(core::mul(proj, view), model);
+
+            if (auto loc = gpu::gl::get_uniform_location(shader_.id(), "uMVP"); loc != -1) {
+                gpu::gl::set_uniform_mat4(loc, value_ptr(mvp));
+            }
+            if (auto loc = gpu::gl::get_uniform_location(shader_.id(), "uBlend"); loc != -1) {
+                gpu::gl::set_uniform(loc, blend_);
+            }
+
+            gpu::gl::draw_arrays(gpu::gl::Primitive::triangles, 0, 36);
+        }
+
         render::VertexArray::unbind();
     }
 
     void on_resize(int width, int height) {
         gpu::gl::viewport(0, 0, width, height);
         aspect_ratio_ = height > 0 ? static_cast<float>(width) / static_cast<float>(height) : 1.0f;
+        camera_.set_aspect(aspect_ratio_);
     }
 
 private:
-    bool              wireframe_{false};
-    float             time_{0.0f};
-    float             blend_{0.5f};
-    float             bounce_offset_{0.0f};
-    float             rotation_angle_{0.0f};
-    float             rotation_speed_{0.7f};
-    float             bounce_speed_{1.2f};
-    core::Vec3        rotation_axis_{0.0f, 1.0f, 0.0f};
-    float             aspect_ratio_{16.0f / 9.0f};
-    render::VertexArray vao_{};
+    void setup_instances() {
+        std::mt19937 rng{std::random_device{}()};
+        std::uniform_real_distribution<float> axis_dist{-1.0f, 1.0f};
+        std::uniform_real_distribution<float> speed_dist{0.4f, 1.2f};
+        std::uniform_real_distribution<float> phase_dist{0.0f, two_pi<float>()};
+
+        const int grid = 5;
+        const float spacing = 2.0f;
+        cubes_.clear();
+        cubes_.reserve(static_cast<std::size_t>(grid * grid));
+        for (int z = 0; z < grid; ++z) {
+            for (int x = 0; x < grid; ++x) {
+                core::Vec3 pos{
+                    (x - grid / 2) * spacing,
+                    0.0f,
+                    (z - grid / 2) * spacing
+                };
+                core::Vec3 axis{axis_dist(rng), axis_dist(rng), axis_dist(rng)};
+                if (length(axis) < 0.001f) axis = core::Vec3{0.0f, 1.0f, 0.0f};
+                axis = normalize(axis);
+                cubes_.push_back(CubeInstance{
+                    pos,
+                    axis,
+                    speed_dist(rng),
+                    speed_dist(rng),
+                    phase_dist(rng)
+                });
+            }
+        }
+    }
+
+    float                time_{0.0f};
+    float                blend_{0.5f};
+    float                aspect_ratio_{16.0f / 9.0f};
+    render::VertexArray  vao_{};
     render::VertexBuffer vbo_{};
     render::Texture2D    texture_a_{};
     render::Texture2D    texture_b_{};
     render::Shader       shader_{};
+    render::Camera       camera_{core::Vec3{0.0f, 0.0f, 6.0f}, aspect_ratio_};
+    std::vector<CubeInstance> cubes_;
 };
 
 }

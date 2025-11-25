@@ -17,6 +17,8 @@ using ProgramId     = GLuint;
 using TextureId     = GLuint;
 using UniformLocation = GLint;
 
+inline bool g_initialized = false;
+
 enum class BufferTarget : GLenum {
     array = GL_ARRAY_BUFFER,
     element_array = GL_ELEMENT_ARRAY_BUFFER,
@@ -88,8 +90,13 @@ enum class PixelType : GLenum {
 };
 
 [[nodiscard]] inline bool init(LoadProc load_proc) {
-    return load_proc && gladLoadGL(load_proc) != 0;
+    g_initialized = load_proc && gladLoadGL(load_proc) != 0;
+    return g_initialized;
 }
+
+[[nodiscard]] inline bool is_initialized() noexcept { return g_initialized; }
+
+inline void shutdown() noexcept { g_initialized = false; }
 
 inline void viewport(int x, int y, int width, int height) {
     glViewport(x, y, width, height);
@@ -118,6 +125,10 @@ inline void enable_depth_test(bool enable) {
 }
 
 inline void destroy_buffer(BufferId& id) {
+    if (!g_initialized) {
+        id = 0;
+        return;
+    }
     if (id != 0) {
         glDeleteBuffers(1, &id);
         id = 0;
@@ -152,6 +163,10 @@ constexpr ClearMask DEPTH_BUFFER_BIT = GL_DEPTH_BUFFER_BIT;
 }
 
 inline void destroy_vertex_array(VertexArrayId& id) {
+    if (!g_initialized) {
+        id = 0;
+        return;
+    }
     if (id != 0) {
         glDeleteVertexArrays(1, &id);
         id = 0;
@@ -247,6 +262,10 @@ inline std::string program_info_log(ProgramId program) {
 }
 
 inline void delete_program(ProgramId& program) {
+    if (!g_initialized) {
+        program = 0;
+        return;
+    }
     if (program != 0) {
         glDeleteProgram(program);
         program = 0;
@@ -297,6 +316,10 @@ inline void set_uniform_mat4(UniformLocation location, const float* data) {
 }
 
 inline void destroy_texture(TextureId& id) {
+    if (!g_initialized) {
+        id = 0;
+        return;
+    }
     if (id != 0) {
         glDeleteTextures(1, &id);
         id = 0;

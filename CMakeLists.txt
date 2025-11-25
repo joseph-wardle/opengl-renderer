@@ -60,7 +60,9 @@ target_sources(opengl_renderer
         src/scenes/hello_square/scene.cppm
         src/scenes/hello_cube/scene.cppm
         src/scenes/hello_textures/scene.cppm
+        src/scenes/hello_camera/scene.cppm
         src/resources/image.cppm
+        src/render/camera.cppm
 )
 
 target_compile_options(opengl_renderer PUBLIC

@@ -63,7 +63,10 @@ int Application<Scene>::run() {
 
     auto window_expected = platform::Window::create(wc);
     if (!window_expected) {
-        std::println(std::cerr, "Window creation failed: {}", window_expected.error().message);
+        const auto& err = window_expected.error();
+        // std::println(std::cerr, "Window creation failed:");
+        std::println(std::cerr, "    Error code: {}", err.code);
+        std::println(std::cerr, "    Error message: {}", err.message);
         return 1;
     }
     platform::Window window = std::move(*window_expected);
@@ -88,8 +91,19 @@ int Application<Scene>::run() {
         &input
     );
 
+    window.set_cursor_pos_callback(
+        [](double x, double y, void* user) {
+            if (auto* state = static_cast<platform::InputState*>(user)) {
+                state->handle_cursor_pos(x, y);
+            }
+        },
+        &input
+    );
+
     // Initialize GLAD
     if (!gpu::gl::init(window.get_load_proc())) {
+        std::println(std::cerr, "Failed to initialize OpenGL loader (GLAD)");
+        gpu::gl::shutdown();
         return 1;
     }
 
@@ -120,6 +134,8 @@ int Application<Scene>::run() {
 
         window.swap_buffers();
     }
+
+    gpu::gl::shutdown();
 
     return 0;
 }
