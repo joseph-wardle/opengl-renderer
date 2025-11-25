@@ -6,10 +6,10 @@ module;
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-export module math.glm;
+export module core.glm;
 
-export namespace math {
-    
+export namespace core {
+
 using Vec2 = glm::vec2;
 using Vec3 = glm::vec3;
 using Vec4 = glm::vec4;
@@ -19,5 +19,17 @@ using Mat4 = glm::mat4;
 
 using glm::radians;
 using glm::value_ptr;
+using glm::translate;
+using glm::rotate;
+using glm::scale;
+using glm::lookAt;
+using glm::perspective;
+using glm::length;
+using glm::normalize;
+using glm::mat4;
+
+inline Mat4 mul(const Mat4& a, const Mat4& b) {
+    return a * b;
+}
 
 }

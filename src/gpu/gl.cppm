@@ -15,6 +15,7 @@ using VertexArrayId = GLuint;
 using ShaderId      = GLuint;
 using ProgramId     = GLuint;
 using TextureId     = GLuint;
+using UniformLocation = GLint;
 
 enum class BufferTarget : GLenum {
     array = GL_ARRAY_BUFFER,
@@ -100,6 +101,14 @@ inline void clear_color(float r, float g, float b, float a) {
 
 inline void clear(ClearMask mask) {
     glClear(mask);
+}
+
+inline void enable_depth_test(bool enable) {
+    if (enable) {
+        glEnable(GL_DEPTH_TEST);
+    } else {
+        glDisable(GL_DEPTH_TEST);
+    }
 }
 
 [[nodiscard]] inline BufferId create_buffer() {
@@ -265,8 +274,6 @@ inline void polygon_mode(Face face, PolygonMode mode) {
     glPolygonMode(static_cast<GLenum>(face), static_cast<GLenum>(mode));
 }
 
-using UniformLocation = GLint;
-
 inline UniformLocation get_uniform_location(ProgramId program, std::string_view name) {
     return glGetUniformLocation(program, name.data());
 }
@@ -277,6 +284,10 @@ inline void set_uniform(UniformLocation location, float v0) {
 
 inline void set_uniform(UniformLocation location, int v0) {
     glUniform1i(location, v0);
+}
+
+inline void set_uniform_mat4(UniformLocation location, const float* data) {
+    glUniformMatrix4fv(location, 1, GL_FALSE, data);
 }
 
 [[nodiscard]] inline TextureId create_texture() {

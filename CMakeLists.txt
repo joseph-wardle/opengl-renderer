@@ -55,9 +55,10 @@ target_sources(opengl_renderer
         src/render/shader.cppm
         src/render/texture.cppm
         src/gpu/gl.cppm
-        src/math/glm.cppm
+        src/core/glm.cppm
         src/platform/glfw.cppm
         src/scenes/hello_square/scene.cppm
+        src/scenes/hello_cube/scene.cppm
         src/scenes/hello_textures/scene.cppm
         src/resources/image.cppm
 )
