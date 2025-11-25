@@ -53,10 +53,12 @@ target_sources(opengl_renderer
         src/render/buffer.cppm
         src/render/vertex_array.cppm
         src/render/shader.cppm
+        src/render/texture.cppm
         src/gpu/gl.cppm
         src/math/glm.cppm
         src/platform/glfw.cppm
         src/scenes/hello_square/scene.cppm
+        src/scenes/hello_textures/scene.cppm
         src/resources/image.cppm
 )
 

@@ -14,6 +14,7 @@ using BufferId      = GLuint;
 using VertexArrayId = GLuint;
 using ShaderId      = GLuint;
 using ProgramId     = GLuint;
+using TextureId     = GLuint;
 
 enum class BufferTarget : GLenum {
     array = GL_ARRAY_BUFFER,
@@ -51,6 +52,38 @@ enum class PolygonMode : GLenum {
 
 enum class Face : GLenum {
     front_and_back = GL_FRONT_AND_BACK,
+};
+
+enum class TextureTarget : GLenum {
+    texture_2d = GL_TEXTURE_2D,
+};
+
+enum class TextureParam : GLenum {
+    wrap_s    = GL_TEXTURE_WRAP_S,
+    wrap_t    = GL_TEXTURE_WRAP_T,
+    min_filter = GL_TEXTURE_MIN_FILTER,
+    mag_filter = GL_TEXTURE_MAG_FILTER,
+};
+
+enum class TextureWrap : GLenum {
+    repeat       = GL_REPEAT,
+    clamp_to_edge = GL_CLAMP_TO_EDGE,
+};
+
+enum class TextureFilter : GLenum {
+    nearest              = GL_NEAREST,
+    linear               = GL_LINEAR,
+    linear_mipmap_linear = GL_LINEAR_MIPMAP_LINEAR,
+};
+
+enum class PixelFormat : GLenum {
+    red  = GL_RED,
+    rgb  = GL_RGB,
+    rgba = GL_RGBA,
+};
+
+enum class PixelType : GLenum {
+    u8 = GL_UNSIGNED_BYTE,
 };
 
 [[nodiscard]] inline bool init(LoadProc load_proc) {
@@ -240,6 +273,70 @@ inline UniformLocation get_uniform_location(ProgramId program, std::string_view 
 
 inline void set_uniform(UniformLocation location, float v0) {
     glUniform1f(location, v0);
+}
+
+inline void set_uniform(UniformLocation location, int v0) {
+    glUniform1i(location, v0);
+}
+
+[[nodiscard]] inline TextureId create_texture() {
+    TextureId id{};
+    glGenTextures(1, &id);
+    return id;
+}
+
+inline void destroy_texture(TextureId& id) {
+    if (id != 0) {
+        glDeleteTextures(1, &id);
+        id = 0;
+    }
+}
+
+inline void active_texture(unsigned int unit) {
+    glActiveTexture(GL_TEXTURE0 + unit);
+}
+
+inline void bind_texture(TextureTarget target, TextureId id) {
+    glBindTexture(static_cast<GLenum>(target), id);
+}
+
+inline void tex_image_2d(
+    TextureTarget target,
+    int level,
+    PixelFormat internal_format,
+    int width,
+    int height,
+    PixelFormat format,
+    PixelType type,
+    const void* data
+) {
+    glTexImage2D(
+        static_cast<GLenum>(target),
+        level,
+        static_cast<GLint>(internal_format),
+        width,
+        height,
+        0,
+        static_cast<GLenum>(format),
+        static_cast<GLenum>(type),
+        data
+    );
+}
+
+inline void generate_mipmap(TextureTarget target) {
+    glGenerateMipmap(static_cast<GLenum>(target));
+}
+
+inline void set_texture_parameter(
+    TextureTarget target,
+    TextureParam param,
+    int value
+) {
+    glTexParameteri(
+        static_cast<GLenum>(target),
+        static_cast<GLenum>(param),
+        value
+    );
 }
 
 } // namespace gpu::gl

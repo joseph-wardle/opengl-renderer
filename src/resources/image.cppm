@@ -16,18 +16,20 @@ struct ImageData {
     std::vector<std::uint8_t> pixels;  // tightly packed
 };
 
-inline std::optional<ImageData>
+inline std::expected<ImageData, std::string>
 load_image(const std::string& path, bool flip_vertically = true) {
     stbi_set_flip_vertically_on_load(flip_vertically ? 1 : 0);
 
     int w = 0;
     int h = 0;
     int c = 0;
-    unsigned char* data =
-        stbi_load(path.c_str(), &w, &h, &c, 0);
+    unsigned char* data = stbi_load(path.c_str(), &w, &h, &c, 0);
 
     if (!data) {
-        return std::nullopt;
+        const char* reason = stbi_failure_reason();
+        return std::unexpected(
+            reason ? std::string{"stb_image: "} + reason : std::string{"stb_image: unknown failure"}
+        );
     }
 
     ImageData img;
