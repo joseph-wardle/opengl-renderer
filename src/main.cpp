@@ -1,8 +1,10 @@
 import core.app;
-import scenes.hello_camera;
+import scenes.phong_cube;
 
 auto main() -> int {
-    core::AppConfig cfg{};
-    core::Application app{cfg, scenes::HelloCamera{}};
+    core::AppConfig cfg{
+        .vsync = false,
+    };
+    core::Application app{cfg, scenes::PhongCube{}};
     return app.run();
 }

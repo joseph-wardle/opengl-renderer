@@ -34,6 +34,8 @@ export using glm::length;
 export using glm::normalize;
 export using glm::cross;
 export using glm::two_pi;
+export using glm::inverse;
+export using glm::transpose;
 
 export namespace core {
 

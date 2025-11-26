@@ -309,6 +309,14 @@ inline void set_uniform_mat4(UniformLocation location, const float* data) {
     glUniformMatrix4fv(location, 1, GL_FALSE, data);
 }
 
+inline void set_uniform_mat3(UniformLocation location, const float* data) {
+    glUniformMatrix3fv(location, 1, GL_FALSE, data);
+}
+
+inline void set_uniform_vec3(UniformLocation location, const float* data) {
+    glUniform3fv(location, 1, data);
+}
+
 [[nodiscard]] inline TextureId create_texture() {
     TextureId id{};
     glGenTextures(1, &id);
