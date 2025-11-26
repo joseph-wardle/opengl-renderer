@@ -99,6 +99,7 @@ target_sources(opengl_renderer
         src/render/material.cppm
         src/render/lights.cppm
         src/scenes/phong_cube/scene.cppm
+        src/scenes/phong_maps/scene.cppm
 )
 
 target_compile_options(opengl_renderer PUBLIC
