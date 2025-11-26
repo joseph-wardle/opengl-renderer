@@ -18,6 +18,11 @@ inline void set_float(const Shader& shader, std::string_view name, float v) {
         gpu::gl::set_uniform(loc, v);
     }
 }
+inline void set_int(const Shader& shader, std::string_view name, int v) {
+    if (auto loc = gpu::gl::get_uniform_location(shader.id(), std::string(name).c_str()); loc != -1) {
+        gpu::gl::set_uniform(loc, v);
+    }
+}
 } // namespace detail
 
 struct DirectionalLight {
@@ -29,6 +34,11 @@ struct DirectionalLight {
         detail::set_vec3(shader, std::string(prefix).append(".direction"), direction);
         detail::set_vec3(shader, std::string(prefix).append(".color"), color);
         detail::set_float(shader, std::string(prefix).append(".intensity"), intensity);
+    }
+
+    void apply_at(const Shader& shader, std::string_view array_name, int index) const {
+        std::string base = std::string(array_name) + "[" + std::to_string(index) + "]";
+        apply(shader, base);
     }
 };
 
@@ -47,6 +57,11 @@ struct PointLight {
         detail::set_float(shader, std::string(prefix).append(".constant"), constant);
         detail::set_float(shader, std::string(prefix).append(".linear"), linear);
         detail::set_float(shader, std::string(prefix).append(".quadratic"), quadratic);
+    }
+
+    void apply_at(const Shader& shader, std::string_view array_name, int index) const {
+        std::string base = std::string(array_name) + "[" + std::to_string(index) + "]";
+        apply(shader, base);
     }
 };
 
@@ -71,6 +86,11 @@ struct SpotLight {
         detail::set_float(shader, std::string(prefix).append(".constant"), constant);
         detail::set_float(shader, std::string(prefix).append(".linear"), linear);
         detail::set_float(shader, std::string(prefix).append(".quadratic"), quadratic);
+    }
+
+    void apply_at(const Shader& shader, std::string_view array_name, int index) const {
+        std::string base = std::string(array_name) + "[" + std::to_string(index) + "]";
+        apply(shader, base);
     }
 };
 

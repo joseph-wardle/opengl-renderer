@@ -39,9 +39,16 @@ in vec3 vWorldPos;
 
 layout(location = 0) out vec4 FragColor;
 
-uniform DirectionalLight uDirLight;
-uniform PointLight      uPointLight;
-uniform SpotLight       uSpotLight;
+const int MAX_DIR = 4;
+const int MAX_POINT = 4;
+const int MAX_SPOT = 2;
+
+uniform int uDirCount;
+uniform int uPointCount;
+uniform int uSpotCount;
+uniform DirectionalLight uDirLights[MAX_DIR];
+uniform PointLight      uPointLights[MAX_POINT];
+uniform SpotLight       uSpotLights[MAX_SPOT];
 uniform PhongMaterial   uMaterial;
 uniform vec3            uViewPos;
 uniform vec3            uColor;
@@ -52,40 +59,43 @@ void main()
     vec3 V = normalize(uViewPos - vWorldPos);
     vec3 color = vec3(0.0);
 
-    // Directional
-    if (uDirLight.intensity > 0.0) {
-        vec3 L = normalize(-uDirLight.direction);
+    for (int i = 0; i < uDirCount && i < MAX_DIR; ++i) {
+        DirectionalLight light = uDirLights[i];
+        if (light.intensity <= 0.0) continue;
+        vec3 L = normalize(-light.direction);
         vec3 H = normalize(L + V);
         float diff = max(dot(N, L), 0.0);
         float spec = pow(max(dot(N, H), 0.0), uMaterial.shininess);
-        vec3 light_color = uDirLight.color * uDirLight.intensity;
+        vec3 light_color = light.color * light.intensity;
         color += (uMaterial.ambient * uColor + uMaterial.diffuse * diff * uColor + uMaterial.specular * spec) * light_color;
     }
 
-    // Point
-    if (uPointLight.intensity > 0.0) {
-        vec3 L = normalize(uPointLight.position - vWorldPos);
+    for (int i = 0; i < uPointCount && i < MAX_POINT; ++i) {
+        PointLight light = uPointLights[i];
+        if (light.intensity <= 0.0) continue;
+        vec3 L = normalize(light.position - vWorldPos);
         vec3 H = normalize(L + V);
         float diff = max(dot(N, L), 0.0);
         float spec = pow(max(dot(N, H), 0.0), uMaterial.shininess);
-        float distance = length(uPointLight.position - vWorldPos);
-        float attenuation = 1.0 / (uPointLight.constant + uPointLight.linear * distance + uPointLight.quadratic * distance * distance);
-        vec3 light_color = uPointLight.color * uPointLight.intensity * attenuation;
+        float distance = length(light.position - vWorldPos);
+        float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * distance * distance);
+        vec3 light_color = light.color * light.intensity * attenuation;
         color += (uMaterial.ambient * uColor + uMaterial.diffuse * diff * uColor + uMaterial.specular * spec) * light_color;
     }
 
-    // Spot
-    if (uSpotLight.intensity > 0.0) {
-        vec3 L = normalize(uSpotLight.position - vWorldPos);
+    for (int i = 0; i < uSpotCount && i < MAX_SPOT; ++i) {
+        SpotLight light = uSpotLights[i];
+        if (light.intensity <= 0.0) continue;
+        vec3 L = normalize(light.position - vWorldPos);
         vec3 H = normalize(L + V);
-        float theta = dot(L, normalize(-uSpotLight.direction));
-        float epsilon = uSpotLight.inner_cos - uSpotLight.outer_cos;
-        float intensity = clamp((theta - uSpotLight.outer_cos) / epsilon, 0.0, 1.0);
+        float theta = dot(L, normalize(-light.direction));
+        float epsilon = light.inner_cos - light.outer_cos;
+        float cutoff = clamp((theta - light.outer_cos) / epsilon, 0.0, 1.0);
         float diff = max(dot(N, L), 0.0);
         float spec = pow(max(dot(N, H), 0.0), uMaterial.shininess);
-        float distance = length(uSpotLight.position - vWorldPos);
-        float attenuation = 1.0 / (uSpotLight.constant + uSpotLight.linear * distance + uSpotLight.quadratic * distance * distance);
-        vec3 light_color = uSpotLight.color * uSpotLight.intensity * attenuation * intensity;
+        float distance = length(light.position - vWorldPos);
+        float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * distance * distance);
+        vec3 light_color = light.color * light.intensity * attenuation * cutoff;
         color += (uMaterial.ambient * uColor + uMaterial.diffuse * diff * uColor + uMaterial.specular * spec) * light_color;
     }
 
