@@ -1,12 +1,12 @@
 module;
 
-#include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
 export module ui.imgui_layer;
 
 import platform.glfw;
+import ui.imgui;
 
 export namespace ui {
 
@@ -14,8 +14,8 @@ class ImGuiLayer {
 public:
     explicit ImGuiLayer(platform::Window& window) {
         IMGUI_CHECKVERSION();
-        context_ = ImGui::CreateContext();
-        ImGuiIO& io = ImGui::GetIO();
+        context_ = imgui::CreateContext();
+        auto& io = imgui::GetIO();
 
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
         // Docking exists only on the docking branch; guard so tagged releases still compile.
@@ -23,7 +23,7 @@ public:
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 #endif
 
-        ImGui::StyleColorsDark();
+        imgui::StyleColorsDark();
 
         GLFWwindow* native = window.native_handle();
         // Let ImGui install callbacks so it can consume input; it will chain ours.
@@ -40,18 +40,18 @@ public:
     ~ImGuiLayer() {
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
-        ImGui::DestroyContext(context_);
+        imgui::DestroyContext(context_);
     }
 
     void begin_frame() {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
+        imgui::NewFrame();
     }
 
     void end_frame() {
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        imgui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(imgui::GetDrawData());
     }
 
 private:

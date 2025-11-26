@@ -93,6 +93,7 @@ target_sources(opengl_renderer
         src/scenes/hello_camera/scene.cppm
         src/resources/image.cppm
         src/render/camera.cppm
+        src/ui/imgui.cppm
         src/ui/imgui_layer.cppm
 )
 

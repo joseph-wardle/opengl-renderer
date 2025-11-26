@@ -1,7 +1,5 @@
 module;
 
-#include <imgui.h>
-
 export module scenes.hello_camera;
 
 import std;
@@ -15,6 +13,7 @@ import render.shader;
 import render.texture;
 import render.camera;
 import resources.image;
+import ui.imgui;
 
 export namespace scenes {
 
@@ -158,7 +157,7 @@ struct HelloCamera {
             blend_ = 0.5f + 0.5f * std::sin(anim_time_ * 0.4f);
         }
 
-        ImGuiIO& io = ImGui::GetIO();
+        auto& io = imgui::GetIO();
         const bool allow_camera_input = !io.WantCaptureKeyboard && !io.WantCaptureMouse;
         if (allow_camera_input) {
             camera_.update(dt, input);
@@ -221,34 +220,34 @@ struct HelloCamera {
             return;
         }
 
-        if (ImGui::Begin("Camera Debug", &show_debug_window_)) {
-            ImGuiIO& io = ImGui::GetIO();
-            ImGui::Text("FPS: %.1f", io.Framerate);
-            ImGui::Separator();
+        if (imgui::Begin("Camera Debug", &show_debug_window_)) {
+            auto& io = imgui::GetIO();
+            imgui::Text("FPS: %.1f", io.Framerate);
+            imgui::Separator();
 
-            ImGui::Checkbox("Animate cubes", &animate_cubes_);
-            ImGui::Checkbox("Wireframe", &wireframe_);
+            imgui::Checkbox("Animate cubes", &animate_cubes_);
+            imgui::Checkbox("Wireframe", &wireframe_);
 
             if (animate_cubes_) {
-                ImGui::BeginDisabled();
+                imgui::BeginDisabled();
             }
-            ImGui::SliderFloat("Blend", &blend_, 0.0f, 1.0f);
+            imgui::SliderFloat("Blend", &blend_, 0.0f, 1.0f);
             if (animate_cubes_) {
-                ImGui::EndDisabled();
+                imgui::EndDisabled();
             }
 
             float speed = camera_speed_;
-            if (ImGui::SliderFloat("Camera speed", &speed, 0.5f, 10.0f)) {
+            if (imgui::SliderFloat("Camera speed", &speed, 0.5f, 10.0f)) {
                 camera_speed_ = speed;
                 camera_.set_base_speed(camera_speed_);
             }
 
-            ImGui::Text(
+            imgui::Text(
                 "Input captured: %s",
                 (io.WantCaptureKeyboard || io.WantCaptureMouse) ? "ImGui" : "Scene"
             );
         }
-        ImGui::End();
+        imgui::End();
     }
 
     void on_resize(int width, int height) {
