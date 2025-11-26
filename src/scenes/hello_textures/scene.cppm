@@ -160,6 +160,8 @@ struct HelloTextured {
         render::VertexArray::unbind();
     }
 
+    void on_gui() {}
+
     void on_resize(int width, int height) {
         gpu::gl::viewport(0, 0, width, height);
     }

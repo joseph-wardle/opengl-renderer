@@ -192,6 +192,8 @@ struct HelloCube {
         render::VertexArray::unbind();
     }
 
+    void on_gui() {}
+
     void on_resize(int width, int height) {
         gpu::gl::viewport(0, 0, width, height);
         aspect_ratio_ = height > 0 ? static_cast<float>(width) / static_cast<float>(height) : 1.0f;

@@ -3,6 +3,7 @@ export module core.app;
 import std;
 import platform.glfw;
 import gpu.gl;
+import ui.imgui_layer;
 
 export namespace core {
 
@@ -32,6 +33,7 @@ concept SceneConcept =
         { scene.on_update(dt, input) } -> std::same_as<void>;
         { scene.on_render() }          -> std::same_as<void>;
         { scene.on_resize(w, h) }      -> std::same_as<void>;
+        { scene.on_gui() }             -> std::same_as<void>;
     };
 
 template <SceneConcept Scene>
@@ -113,6 +115,9 @@ int Application<Scene>::run() {
     scene_.on_init();
     scene_.on_resize(config_.width, config_.height);
 
+    ui::ImGuiLayer imgui{window};
+    bool show_debug_ui = true;
+
     auto last_time = Clock::now();
 
     while (!window.should_close()) {
@@ -126,11 +131,17 @@ int Application<Scene>::run() {
         if (input.is_down(platform::Key::escape)) {
             window.request_close();
         }
+        if (input.is_pressed(platform::Key::f1)) {
+            show_debug_ui = !show_debug_ui;
+        }
 
+        imgui.begin_frame();
         scene_.on_update(DeltaTime{dt}, input);
-
-        gpu::gl::clear(gpu::gl::COLOR_BUFFER_BIT | gpu::gl::DEPTH_BUFFER_BIT);
         scene_.on_render();
+        if (show_debug_ui) {
+            scene_.on_gui();
+        }
+        imgui.end_frame();
 
         window.swap_buffers();
     }

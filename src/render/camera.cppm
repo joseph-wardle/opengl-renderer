@@ -13,6 +13,8 @@ public:
         : position_(position), aspect_(aspect) {}
 
     void set_aspect(float aspect) { aspect_ = aspect; }
+    void set_base_speed(float speed) { base_speed_ = speed; }
+    [[nodiscard]] float base_speed() const noexcept { return base_speed_; }
 
     void update(core::DeltaTime dt, const platform::InputState& input) {
         const float d = dt.seconds;

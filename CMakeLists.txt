@@ -38,9 +38,39 @@ CPMAddPackage(
     GIT_TAG master
 )
 
+CPMAddPackage(
+    NAME imgui
+    GITHUB_REPOSITORY ocornut/imgui
+    VERSION 1.91.0
+)
+
 add_library(glad STATIC external/glad/src/gl.c)
 target_include_directories(glad PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/external/glad/include)
 target_compile_features(glad PUBLIC c_std_99)
+
+set(IMGUI_SOURCES
+    ${imgui_SOURCE_DIR}/imgui.cpp
+    ${imgui_SOURCE_DIR}/imgui_draw.cpp
+    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+    ${imgui_SOURCE_DIR}/imgui_tables.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+)
+
+add_library(imgui STATIC ${IMGUI_SOURCES})
+target_include_directories(imgui PUBLIC
+    ${imgui_SOURCE_DIR}
+    ${imgui_SOURCE_DIR}/backends
+)
+target_compile_definitions(imgui PUBLIC
+    IMGUI_IMPL_OPENGL_LOADER_GLAD
+)
+target_link_libraries(imgui PUBLIC glfw glad)
+target_compile_options(imgui PUBLIC
+    -stdlib=libc++
+    $<$<CXX_COMPILER_ID:Clang>:-Wno-nontrivial-memcall>
+    $<$<CXX_COMPILER_ID:AppleClang>:-Wno-nontrivial-memcall>
+)
 
 add_library(opengl_renderer STATIC)
 
@@ -63,6 +93,7 @@ target_sources(opengl_renderer
         src/scenes/hello_camera/scene.cppm
         src/resources/image.cppm
         src/render/camera.cppm
+        src/ui/imgui_layer.cppm
 )
 
 target_compile_options(opengl_renderer PUBLIC
@@ -74,6 +105,7 @@ target_link_libraries(opengl_renderer PUBLIC
     glad
     glfw
     glm::glm
+    imgui
 )
 
 target_include_directories(opengl_renderer PUBLIC

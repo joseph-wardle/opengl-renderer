@@ -1,3 +1,7 @@
+module;
+
+#include <imgui.h>
+
 export module scenes.hello_camera;
 
 import std;
@@ -145,12 +149,20 @@ struct HelloCamera {
         setup_instances();
 
         camera_ = render::Camera(core::Vec3{0.0f, 0.0f, 6.0f}, aspect_ratio_);
+        camera_.set_base_speed(camera_speed_);
     }
 
     void on_update(core::DeltaTime dt, const platform::InputState& input) {
-        time_ += dt.seconds;
-        blend_ = 0.5f + 0.5f * std::sin(time_ * 0.4f);
-        camera_.update(dt, input);
+        if (animate_cubes_) {
+            anim_time_ += dt.seconds;
+            blend_ = 0.5f + 0.5f * std::sin(anim_time_ * 0.4f);
+        }
+
+        ImGuiIO& io = ImGui::GetIO();
+        const bool allow_camera_input = !io.WantCaptureKeyboard && !io.WantCaptureMouse;
+        if (allow_camera_input) {
+            camera_.update(dt, input);
+        }
     }
 
     void on_render() {
@@ -160,6 +172,11 @@ struct HelloCamera {
         if (!vao_.is_valid() || shader_.id() == 0 || !texture_a_.is_valid() || !texture_b_.is_valid()) {
             return;
         }
+
+        const auto polygon_mode = wireframe_
+            ? gpu::gl::PolygonMode::line
+            : gpu::gl::PolygonMode::fill;
+        gpu::gl::polygon_mode(gpu::gl::Face::front_and_back, polygon_mode);
 
         const auto view = camera_.view();
         const auto proj = camera_.projection();
@@ -177,11 +194,11 @@ struct HelloCamera {
         vao_.bind();
 
         for (const auto& cube : cubes_) {
-            const float bounce = 0.25f * std::sin(time_ * cube.bounce_speed + cube.bounce_phase);
+            const float bounce = 0.25f * std::sin(anim_time_ * cube.bounce_speed + cube.bounce_phase);
             const core::Mat4 model =
                 core::mul(
                     translate(core::Mat4{1.0f}, cube.position + core::Vec3{0.0f, bounce, 0.0f}),
-                    rotate(core::Mat4{1.0f}, time_ * cube.rot_speed, cube.axis)
+                    rotate(core::Mat4{1.0f}, anim_time_ * cube.rot_speed, cube.axis)
                 );
             const core::Mat4 mvp = core::mul(core::mul(proj, view), model);
 
@@ -196,6 +213,42 @@ struct HelloCamera {
         }
 
         render::VertexArray::unbind();
+        gpu::gl::polygon_mode(gpu::gl::Face::front_and_back, gpu::gl::PolygonMode::fill);
+    }
+
+    void on_gui() {
+        if (!show_debug_window_) {
+            return;
+        }
+
+        if (ImGui::Begin("Camera Debug", &show_debug_window_)) {
+            ImGuiIO& io = ImGui::GetIO();
+            ImGui::Text("FPS: %.1f", io.Framerate);
+            ImGui::Separator();
+
+            ImGui::Checkbox("Animate cubes", &animate_cubes_);
+            ImGui::Checkbox("Wireframe", &wireframe_);
+
+            if (animate_cubes_) {
+                ImGui::BeginDisabled();
+            }
+            ImGui::SliderFloat("Blend", &blend_, 0.0f, 1.0f);
+            if (animate_cubes_) {
+                ImGui::EndDisabled();
+            }
+
+            float speed = camera_speed_;
+            if (ImGui::SliderFloat("Camera speed", &speed, 0.5f, 10.0f)) {
+                camera_speed_ = speed;
+                camera_.set_base_speed(camera_speed_);
+            }
+
+            ImGui::Text(
+                "Input captured: %s",
+                (io.WantCaptureKeyboard || io.WantCaptureMouse) ? "ImGui" : "Scene"
+            );
+        }
+        ImGui::End();
     }
 
     void on_resize(int width, int height) {
@@ -236,9 +289,13 @@ private:
         }
     }
 
-    float                time_{0.0f};
+    float                anim_time_{0.0f};
     float                blend_{0.5f};
     float                aspect_ratio_{16.0f / 9.0f};
+    bool                 show_debug_window_{true};
+    bool                 animate_cubes_{true};
+    bool                 wireframe_{false};
+    float                camera_speed_{3.0f};
     render::VertexArray  vao_{};
     render::VertexBuffer vbo_{};
     render::Texture2D    texture_a_{};

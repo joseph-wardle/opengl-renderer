@@ -20,6 +20,8 @@ struct HelloWindow {
         gpu::gl::clear(gpu::gl::COLOR_BUFFER_BIT);
     }
 
+    void on_gui() {}
+
     void on_resize(int, int) {}
 };
 

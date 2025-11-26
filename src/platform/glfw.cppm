@@ -127,6 +127,10 @@ public:
         return glfwGetProcAddress;
     }
 
+    [[nodiscard]] GLFWwindow* native_handle() const noexcept {
+        return handle_;
+    }
+
 private:
     GLFWwindow*    handle_{nullptr};
     ResizeCallback resize_callback_{};
@@ -223,6 +227,7 @@ enum class Key : int {
     left    = GLFW_KEY_LEFT,
     right   = GLFW_KEY_RIGHT,
     left_shift = GLFW_KEY_LEFT_SHIFT,
+    f1      = GLFW_KEY_F1,
 };
 
 struct InputState {
