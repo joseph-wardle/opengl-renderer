@@ -148,7 +148,6 @@ struct HelloCamera {
         setup_instances();
 
         camera_ = render::Camera(core::Vec3{0.0f, 0.0f, 6.0f}, aspect_ratio_);
-        camera_.set_base_speed(camera_speed_);
     }
 
     void on_update(core::DeltaTime dt, const platform::InputState& input) {
@@ -236,10 +235,9 @@ struct HelloCamera {
                 imgui::EndDisabled();
             }
 
-            float speed = camera_speed_;
-            if (imgui::SliderFloat("Camera speed", &speed, 0.5f, 10.0f)) {
-                camera_speed_ = speed;
-                camera_.set_base_speed(camera_speed_);
+            float fov = camera_.fov();
+            if (imgui::SliderFloat("FOV", &fov, 30.0f, 100.0f)) {
+                camera_.set_fov(fov);
             }
 
             imgui::Text(
@@ -294,7 +292,6 @@ private:
     bool                 show_debug_window_{true};
     bool                 animate_cubes_{true};
     bool                 wireframe_{false};
-    float                camera_speed_{3.0f};
     render::VertexArray  vao_{};
     render::VertexBuffer vbo_{};
     render::Texture2D    texture_a_{};

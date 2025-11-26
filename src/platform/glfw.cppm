@@ -45,6 +45,7 @@ struct WindowConfig {
 using ResizeCallback    = void(*)(int, int, void*);
 using KeyCallback       = void(*)(int, int, int, int, void*);
 using CursorPosCallback = void(*)(double, double, void*);
+using ScrollCallback    = void(*)(double, double, void*);
 
 class Window {
 public:
@@ -121,6 +122,11 @@ public:
         cursor_pos_userdata_ = userdata;
     }
 
+    void set_scroll_callback(ScrollCallback cb, void* userdata = nullptr) noexcept {
+        scroll_callback_ = cb;
+        scroll_userdata_ = userdata;
+    }
+
     using LoadProc = GLFWglproc (*)(const char*);
 
     [[nodiscard]] LoadProc get_load_proc() const noexcept {
@@ -136,9 +142,11 @@ private:
     ResizeCallback resize_callback_{};
     KeyCallback    key_callback_{};
     CursorPosCallback cursor_pos_callback_{};
+    ScrollCallback    scroll_callback_{};
     void*          resize_userdata_{nullptr};
     void*          key_userdata_{nullptr};
     void*          cursor_pos_userdata_{nullptr};
+    void*          scroll_userdata_{nullptr};
 
     void refresh_user_pointer() noexcept {
         if (handle_) {
@@ -177,6 +185,16 @@ private:
                 }
             }
         );
+
+        glfwSetScrollCallback(
+            handle_,
+            [](GLFWwindow* win, double xoffset, double yoffset) {
+                auto* self = static_cast<Window*>(glfwGetWindowUserPointer(win));
+                if (self && self->scroll_callback_) {
+                    self->scroll_callback_(xoffset, yoffset, self->scroll_userdata_);
+                }
+            }
+        );
     }
 
     void destroy() noexcept {
@@ -207,9 +225,11 @@ private:
         other.resize_callback_ = nullptr;
         other.key_callback_ = nullptr;
         other.cursor_pos_callback_ = nullptr;
+        other.scroll_callback_ = nullptr;
         other.resize_userdata_ = nullptr;
         other.key_userdata_ = nullptr;
         other.cursor_pos_userdata_ = nullptr;
+        other.scroll_userdata_ = nullptr;
     }
 };
 
@@ -248,9 +268,15 @@ struct InputState {
         bool first{true};
     } mouse{};
 
+    struct ScrollDelta {
+        double x{0.0};
+        double y{0.0};
+    } scroll{};
+
     void begin_frame() noexcept {
         previous = current;
         mouse.delta = {};
+        scroll = {};
     }
 
     void handle_key_event(int key, int action) noexcept {
@@ -296,7 +322,13 @@ struct InputState {
         mouse.y = y;
     }
 
+    void handle_scroll(double xoffset, double yoffset) noexcept {
+        scroll.x += xoffset;
+        scroll.y += yoffset;
+    }
+
     [[nodiscard]] MouseDelta mouse_delta() const noexcept { return mouse.delta; }
+    [[nodiscard]] ScrollDelta scroll_delta() const noexcept { return scroll; }
 };
 
 } // namespace platform

@@ -15,9 +15,18 @@ public:
     void set_aspect(float aspect) { aspect_ = aspect; }
     void set_base_speed(float speed) { base_speed_ = speed; }
     [[nodiscard]] float base_speed() const noexcept { return base_speed_; }
+    void set_fov(float degrees) { fov_degrees_ = std::clamp(degrees, 20.0f, 120.0f); }
+    [[nodiscard]] float fov() const noexcept { return fov_degrees_; }
+    [[nodiscard]] float speed_multiplier() const noexcept { return speed_multiplier_; }
 
     void update(core::DeltaTime dt, const platform::InputState& input) {
         const float d = dt.seconds;
+        const auto scroll = input.scroll_delta();
+        if (scroll.y != 0.0) {
+            const float delta = static_cast<float>(scroll.y) * scroll_sensitivity_;
+            base_speed_ = std::clamp(base_speed_ + delta, min_speed_, max_speed_);
+        }
+
         const float move_speed = base_speed_ * (input.is_down(platform::Key::left_shift) ? speed_multiplier_ : 1.0f);
         const core::Vec3 forward = forward_vector();
         const core::Vec3 right   = normalize(cross(forward, world_up_));
@@ -58,6 +67,9 @@ private:
     float      base_speed_{3.0f};
     float      speed_multiplier_{2.0f};
     float      mouse_sensitivity_{0.0025f};
+    float      scroll_sensitivity_{0.2f};
+    float      min_speed_{0.5f};
+    float      max_speed_{20.0f};
     core::Vec3 world_up_{0.0f, 1.0f, 0.0f};
 
     [[nodiscard]] core::Vec3 forward_vector() const {

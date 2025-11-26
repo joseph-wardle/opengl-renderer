@@ -66,7 +66,7 @@ int Application<Scene>::run() {
     auto window_expected = platform::Window::create(wc);
     if (!window_expected) {
         const auto& err = window_expected.error();
-        // std::println(std::cerr, "Window creation failed:");
+        std::println(std::cerr, "Window creation failed:");
         std::println(std::cerr, "    Error code: {}", err.code);
         std::println(std::cerr, "    Error message: {}", err.message);
         return 1;
@@ -97,6 +97,15 @@ int Application<Scene>::run() {
         [](double x, double y, void* user) {
             if (auto* state = static_cast<platform::InputState*>(user)) {
                 state->handle_cursor_pos(x, y);
+            }
+        },
+        &input
+    );
+
+    window.set_scroll_callback(
+        [](double xoffset, double yoffset, void* user) {
+            if (auto* state = static_cast<platform::InputState*>(user)) {
+                state->handle_scroll(xoffset, yoffset);
             }
         },
         &input
