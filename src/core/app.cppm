@@ -102,6 +102,16 @@ int Application<Scene>::run() {
         &input
     );
 
+    window.set_mouse_button_callback(
+        [](int button, int action, int mods, void* user) {
+            (void)mods;
+            if (auto* state = static_cast<platform::InputState*>(user)) {
+                state->handle_mouse_button(button, action);
+            }
+        },
+        &input
+    );
+
     window.set_scroll_callback(
         [](double xoffset, double yoffset, void* user) {
             if (auto* state = static_cast<platform::InputState*>(user)) {
@@ -136,6 +146,9 @@ int Application<Scene>::run() {
         auto now  = Clock::now();
         auto dt   = std::chrono::duration<float>(now - last_time).count();
         last_time = now;
+
+        const bool look_active = input.is_mouse_down(platform::MouseButton::right);
+        window.set_cursor_disabled(look_active);
 
         if (input.is_down(platform::Key::escape)) {
             window.request_close();

@@ -158,7 +158,8 @@ struct HelloCamera {
 
         auto& io = imgui::GetIO();
         const bool allow_camera_input = !io.WantCaptureKeyboard && !io.WantCaptureMouse;
-        if (allow_camera_input) {
+        const bool look_active = input.is_mouse_down(platform::MouseButton::right);
+        if (allow_camera_input && look_active) {
             camera_.update(dt, input);
         }
     }

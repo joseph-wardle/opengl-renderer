@@ -42,10 +42,11 @@ struct WindowConfig {
     std::string title{"LearnOpenGL"};
 };
 
-using ResizeCallback    = void(*)(int, int, void*);
-using KeyCallback       = void(*)(int, int, int, int, void*);
-using CursorPosCallback = void(*)(double, double, void*);
-using ScrollCallback    = void(*)(double, double, void*);
+using ResizeCallback       = void(*)(int, int, void*);
+using KeyCallback          = void(*)(int, int, int, int, void*);
+using CursorPosCallback    = void(*)(double, double, void*);
+using MouseButtonCallback  = void(*)(int, int, int, void*);
+using ScrollCallback       = void(*)(double, double, void*);
 
 class Window {
 public:
@@ -122,9 +123,20 @@ public:
         cursor_pos_userdata_ = userdata;
     }
 
+    void set_mouse_button_callback(MouseButtonCallback cb, void* userdata = nullptr) noexcept {
+        mouse_button_callback_ = cb;
+        mouse_button_userdata_ = userdata;
+    }
+
     void set_scroll_callback(ScrollCallback cb, void* userdata = nullptr) noexcept {
         scroll_callback_ = cb;
         scroll_userdata_ = userdata;
+    }
+
+    void set_cursor_disabled(bool disabled) noexcept {
+        if (handle_) {
+            glfwSetInputMode(handle_, GLFW_CURSOR, disabled ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+        }
     }
 
     using LoadProc = GLFWglproc (*)(const char*);
@@ -141,11 +153,13 @@ private:
     GLFWwindow*    handle_{nullptr};
     ResizeCallback resize_callback_{};
     KeyCallback    key_callback_{};
-    CursorPosCallback cursor_pos_callback_{};
-    ScrollCallback    scroll_callback_{};
+    CursorPosCallback   cursor_pos_callback_{};
+    MouseButtonCallback mouse_button_callback_{};
+    ScrollCallback      scroll_callback_{};
     void*          resize_userdata_{nullptr};
     void*          key_userdata_{nullptr};
     void*          cursor_pos_userdata_{nullptr};
+    void*          mouse_button_userdata_{nullptr};
     void*          scroll_userdata_{nullptr};
 
     void refresh_user_pointer() noexcept {
@@ -195,6 +209,17 @@ private:
                 }
             }
         );
+
+        glfwSetMouseButtonCallback(
+            handle_,
+            [](GLFWwindow* win, int button, int action, int mods) {
+                (void)mods;
+                auto* self = static_cast<Window*>(glfwGetWindowUserPointer(win));
+                if (self && self->mouse_button_callback_) {
+                    self->mouse_button_callback_(button, action, mods, self->mouse_button_userdata_);
+                }
+            }
+        );
     }
 
     void destroy() noexcept {
@@ -205,9 +230,13 @@ private:
         resize_callback_ = nullptr;
         key_callback_ = nullptr;
         cursor_pos_callback_ = nullptr;
+        mouse_button_callback_ = nullptr;
+        scroll_callback_ = nullptr;
         resize_userdata_ = nullptr;
         key_userdata_ = nullptr;
         cursor_pos_userdata_ = nullptr;
+        mouse_button_userdata_ = nullptr;
+        scroll_userdata_ = nullptr;
     }
 
     void move_from(Window& other) noexcept {
@@ -215,9 +244,13 @@ private:
         resize_callback_ = other.resize_callback_;
         key_callback_ = other.key_callback_;
         cursor_pos_callback_ = other.cursor_pos_callback_;
+        mouse_button_callback_ = other.mouse_button_callback_;
+        scroll_callback_ = other.scroll_callback_;
         resize_userdata_ = other.resize_userdata_;
         key_userdata_ = other.key_userdata_;
         cursor_pos_userdata_ = other.cursor_pos_userdata_;
+        mouse_button_userdata_ = other.mouse_button_userdata_;
+        scroll_userdata_ = other.scroll_userdata_;
         if (handle_) {
             refresh_user_pointer();
             install_callbacks();
@@ -225,10 +258,12 @@ private:
         other.resize_callback_ = nullptr;
         other.key_callback_ = nullptr;
         other.cursor_pos_callback_ = nullptr;
+        other.mouse_button_callback_ = nullptr;
         other.scroll_callback_ = nullptr;
         other.resize_userdata_ = nullptr;
         other.key_userdata_ = nullptr;
         other.cursor_pos_userdata_ = nullptr;
+        other.mouse_button_userdata_ = nullptr;
         other.scroll_userdata_ = nullptr;
     }
 };
@@ -250,11 +285,20 @@ enum class Key : int {
     f1      = GLFW_KEY_F1,
 };
 
+enum class MouseButton : int {
+    left   = GLFW_MOUSE_BUTTON_LEFT,
+    right  = GLFW_MOUSE_BUTTON_RIGHT,
+    middle = GLFW_MOUSE_BUTTON_MIDDLE,
+};
+
 struct InputState {
     static constexpr int max_keys = GLFW_KEY_LAST + 1;
+    static constexpr int max_mouse_buttons = GLFW_MOUSE_BUTTON_LAST + 1;
 
     std::array<bool, max_keys> current{};
     std::array<bool, max_keys> previous{};
+    std::array<bool, max_mouse_buttons> mouse_current{};
+    std::array<bool, max_mouse_buttons> mouse_previous{};
 
     struct MouseDelta {
         double x{0.0};
@@ -275,6 +319,7 @@ struct InputState {
 
     void begin_frame() noexcept {
         previous = current;
+        mouse_previous = mouse_current;
         mouse.delta = {};
         scroll = {};
     }
@@ -329,6 +374,30 @@ struct InputState {
 
     [[nodiscard]] MouseDelta mouse_delta() const noexcept { return mouse.delta; }
     [[nodiscard]] ScrollDelta scroll_delta() const noexcept { return scroll; }
+
+    void handle_mouse_button(int button, int action) noexcept {
+        if (button < 0 || button >= max_mouse_buttons) return;
+        const auto idx = static_cast<std::size_t>(button);
+        if (action == GLFW_PRESS) {
+            mouse_current[idx] = true;
+        } else if (action == GLFW_RELEASE) {
+            mouse_current[idx] = false;
+            mouse.first = true; // avoid large deltas on next press
+        }
+    }
+
+    [[nodiscard]] bool is_mouse_down(MouseButton button) const noexcept {
+        const auto b = static_cast<int>(button);
+        if (b < 0 || b >= max_mouse_buttons) return false;
+        return mouse_current[static_cast<std::size_t>(b)];
+    }
+
+    [[nodiscard]] bool is_mouse_pressed(MouseButton button) const noexcept {
+        const auto b = static_cast<int>(button);
+        if (b < 0 || b >= max_mouse_buttons) return false;
+        const auto idx = static_cast<std::size_t>(b);
+        return mouse_current[idx] && !mouse_previous[idx];
+    }
 };
 
 } // namespace platform
