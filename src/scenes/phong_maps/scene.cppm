@@ -50,10 +50,13 @@ struct PhongMaps {
         }
 
         camera_ = render::Camera(core::Vec3{0.0f, 1.5f, 5.0f}, aspect_);
-        light_.position = core::Vec3{2.0f, 3.0f, 2.0f};
-        light_.intensity = 2.0f;
-        light_.linear = 0.045f;
-        light_.quadratic = 0.0075f;
+        point_light_.position = core::Vec3{2.0f, 3.0f, 2.0f};
+        point_light_.intensity = 2.0f;
+        point_light_.linear = 0.045f;
+        point_light_.quadratic = 0.0075f;
+        dir_light_.intensity = 0.3f;
+        dir_light_.direction = core::Vec3{-0.3f, -1.0f, -0.2f};
+        spot_light_.intensity = 0.0f; // off by default
     }
 
     void on_update(core::DeltaTime dt, const platform::InputState& input) {
@@ -225,7 +228,9 @@ private:
         if (auto loc = gpu::gl::get_uniform_location(program, "uViewPos"); loc != -1) {
             gpu::gl::set_uniform_vec3(loc, value_ptr(camera_.position()));
         }
-        light_.apply(shader, "uLight");
+        dir_light_.apply(shader, "uDirLight");
+        point_light_.apply(shader, "uPointLight");
+        spot_light_.apply(shader, "uSpotLight");
     }
 
     void draw_mesh(const render::Shader& shader, const render::Mesh& mesh, const core::Mat4& model, const render::PhongMaterial& material, const core::Vec3& color = core::Vec3{1.0f}) {
@@ -254,7 +259,9 @@ private:
     render::Texture2D  diffuse_map_{};
     render::Texture2D  specular_map_{};
     render::Camera     camera_{core::Vec3{0.0f, 1.5f, 5.0f}, aspect_};
-    render::PointLight light_{};
+    render::DirectionalLight dir_light_{};
+    render::PointLight       point_light_{};
+    render::SpotLight        spot_light_{};
     render::PhongMaterial cube_material_{
         .ambient = core::Vec3{0.2f},
         .diffuse = core::Vec3{0.8f},
