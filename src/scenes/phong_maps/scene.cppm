@@ -4,6 +4,8 @@ import std;
 import core.app;
 import core.glm;
 import render.context;
+import render.uniforms;
+import render.primitives;
 import gpu.gl;
 import platform.glfw;
 import render.shader;
@@ -16,6 +18,8 @@ import resources.image;
 import ui.imgui;
 
 export namespace scenes {
+
+namespace uniforms = render::uniforms;
 
 struct PhongMaps {
     render::Context ctx{};
@@ -96,12 +100,8 @@ struct PhongMaps {
         upload_common_uniforms(shader_, view, proj);
         diffuse_map_.bind(0);
         specular_map_.bind(1);
-        if (auto loc = gpu::gl::get_uniform_location(shader_.id(), "uDiffuseMap"); loc != -1) {
-            gpu::gl::set_uniform(loc, 0);
-        }
-        if (auto loc = gpu::gl::get_uniform_location(shader_.id(), "uSpecularMap"); loc != -1) {
-            gpu::gl::set_uniform(loc, 1);
-        }
+        uniforms::set_int(shader_, "uDiffuseMap", 0);
+        uniforms::set_int(shader_, "uSpecularMap", 1);
         core::Mat4 cube_model = core::mul(
             translate(core::Mat4{1.0f}, core::Vec3{0.0f, 0.75f, 0.0f}),
             rotate(core::Mat4{1.0f}, time_ * 0.6f, core::Vec3{0.0f, 1.0f, 0.0f})
@@ -130,49 +130,7 @@ struct PhongMaps {
 
 private:
     bool create_meshes() {
-        // Cube with normals and UVs (same layout as PhongCube)
-        const std::array<render::Vertex, 24> cube_vertices{{
-            {{-0.5f, -0.5f,  0.5f}, { 0.0f,  0.0f,  1.0f}, {0.0f, 0.0f}},
-            {{ 0.5f, -0.5f,  0.5f}, { 0.0f,  0.0f,  1.0f}, {1.0f, 0.0f}},
-            {{ 0.5f,  0.5f,  0.5f}, { 0.0f,  0.0f,  1.0f}, {1.0f, 1.0f}},
-            {{-0.5f,  0.5f,  0.5f}, { 0.0f,  0.0f,  1.0f}, {0.0f, 1.0f}},
-
-            {{-0.5f, -0.5f, -0.5f}, { 0.0f,  0.0f, -1.0f}, {0.0f, 0.0f}},
-            {{ 0.5f, -0.5f, -0.5f}, { 0.0f,  0.0f, -1.0f}, {1.0f, 0.0f}},
-            {{ 0.5f,  0.5f, -0.5f}, { 0.0f,  0.0f, -1.0f}, {1.0f, 1.0f}},
-            {{-0.5f,  0.5f, -0.5f}, { 0.0f,  0.0f, -1.0f}, {0.0f, 1.0f}},
-
-            {{-0.5f,  0.5f,  0.5f}, {-1.0f,  0.0f,  0.0f}, {1.0f, 0.0f}},
-            {{-0.5f,  0.5f, -0.5f}, {-1.0f,  0.0f,  0.0f}, {1.0f, 1.0f}},
-            {{-0.5f, -0.5f, -0.5f}, {-1.0f,  0.0f,  0.0f}, {0.0f, 1.0f}},
-            {{-0.5f, -0.5f,  0.5f}, {-1.0f,  0.0f,  0.0f}, {0.0f, 0.0f}},
-
-            {{ 0.5f,  0.5f,  0.5f}, { 1.0f,  0.0f,  0.0f}, {1.0f, 0.0f}},
-            {{ 0.5f,  0.5f, -0.5f}, { 1.0f,  0.0f,  0.0f}, {1.0f, 1.0f}},
-            {{ 0.5f, -0.5f, -0.5f}, { 1.0f,  0.0f,  0.0f}, {0.0f, 1.0f}},
-            {{ 0.5f, -0.5f,  0.5f}, { 1.0f,  0.0f,  0.0f}, {0.0f, 0.0f}},
-
-            {{-0.5f, -0.5f, -0.5f}, { 0.0f, -1.0f,  0.0f}, {0.0f, 1.0f}},
-            {{ 0.5f, -0.5f, -0.5f}, { 0.0f, -1.0f,  0.0f}, {1.0f, 1.0f}},
-            {{ 0.5f, -0.5f,  0.5f}, { 0.0f, -1.0f,  0.0f}, {1.0f, 0.0f}},
-            {{-0.5f, -0.5f,  0.5f}, { 0.0f, -1.0f,  0.0f}, {0.0f, 0.0f}},
-
-            {{-0.5f,  0.5f, -0.5f}, { 0.0f,  1.0f,  0.0f}, {0.0f, 1.0f}},
-            {{ 0.5f,  0.5f, -0.5f}, { 0.0f,  1.0f,  0.0f}, {1.0f, 1.0f}},
-            {{ 0.5f,  0.5f,  0.5f}, { 0.0f,  1.0f,  0.0f}, {1.0f, 0.0f}},
-            {{-0.5f,  0.5f,  0.5f}, { 0.0f,  1.0f,  0.0f}, {0.0f, 0.0f}},
-        }};
-
-        const std::array<std::uint32_t, 36> cube_indices{
-            0, 1, 2, 0, 2, 3,
-            4, 5, 6, 4, 6, 7,
-            8, 9,10, 8,10,11,
-            12,13,14, 12,14,15,
-            16,17,18, 16,18,19,
-            20,21,22, 20,22,23
-        };
-
-        auto mesh_res = render::Mesh::from_data(cube_vertices, cube_indices);
+        auto mesh_res = render::make_unit_cube();
         if (!mesh_res) {
             std::println(std::cerr, "Failed to build cube mesh: {}", mesh_res.error());
             return false;
@@ -180,18 +138,7 @@ private:
         cube_mesh_ = std::move(*mesh_res);
 
         // Floor
-        const std::array<render::Vertex, 4> floor_vertices{{
-            {{-8.0f, -1.0f,  8.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-            {{ 8.0f, -1.0f,  8.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-            {{ 8.0f, -1.0f, -8.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f}},
-            {{-8.0f, -1.0f, -8.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
-        }};
-        const std::array<std::uint32_t, 6> floor_indices{
-            0, 1, 2,
-            0, 2, 3
-        };
-
-        auto floor_res = render::Mesh::from_data(floor_vertices, floor_indices);
+        auto floor_res = render::make_floor_quad(8.0f, -1.0f);
         if (!floor_res) {
             std::println(std::cerr, "Failed to build floor mesh: {}", floor_res.error());
             return false;
@@ -230,40 +177,26 @@ private:
     }
 
     void upload_common_uniforms(const render::Shader& shader, const core::Mat4& view, const core::Mat4& proj) {
-        const auto program = shader.id();
-        if (auto loc = gpu::gl::get_uniform_location(program, "uView"); loc != -1) {
-            gpu::gl::set_uniform_mat4(loc, value_ptr(view));
-        }
-        if (auto loc = gpu::gl::get_uniform_location(program, "uProjection"); loc != -1) {
-            gpu::gl::set_uniform_mat4(loc, value_ptr(proj));
-        }
-        if (auto loc = gpu::gl::get_uniform_location(program, "uViewPos"); loc != -1) {
-            gpu::gl::set_uniform_vec3(loc, value_ptr(camera_.position()));
-        }
+        uniforms::set_mat4(shader, "uView", view);
+        uniforms::set_mat4(shader, "uProjection", proj);
+        uniforms::set_vec3(shader, "uViewPos", camera_.position());
         // Upload light counts
         detail_upload_lights(shader);
     }
 
     void draw_mesh(const render::Shader& shader, const render::Mesh& mesh, const core::Mat4& model, const render::PhongMaterial& material, const core::Vec3& color = core::Vec3{1.0f}) {
-        const auto program = shader.id();
-        if (auto loc = gpu::gl::get_uniform_location(program, "uModel"); loc != -1) {
-            gpu::gl::set_uniform_mat4(loc, value_ptr(model));
-        }
         const core::Mat3 normal_matrix = transpose(inverse(core::Mat3(model)));
-        if (auto loc = gpu::gl::get_uniform_location(program, "uNormalMatrix"); loc != -1) {
-            gpu::gl::set_uniform_mat3(loc, value_ptr(normal_matrix));
-        }
-        if (auto loc = gpu::gl::get_uniform_location(program, "uColor"); loc != -1) {
-            gpu::gl::set_uniform_vec3(loc, value_ptr(color));
-        }
+        uniforms::set_mat4(shader, "uModel", model);
+        uniforms::set_mat3(shader, "uNormalMatrix", normal_matrix);
+        uniforms::set_vec3(shader, "uColor", color);
         material.apply(shader, "uMaterial");
         mesh.draw();
     }
 
     void detail_upload_lights(const render::Shader& shader) {
-        render::detail::set_int(shader, "uDirCount", dir_count_);
-        render::detail::set_int(shader, "uPointCount", point_count_);
-        render::detail::set_int(shader, "uSpotCount", spot_count_);
+        uniforms::set_int(shader, "uDirCount", dir_count_);
+        uniforms::set_int(shader, "uPointCount", point_count_);
+        uniforms::set_int(shader, "uSpotCount", spot_count_);
 
         for (int i = 0; i < dir_count_; ++i) {
             dir_lights_[static_cast<std::size_t>(i)].apply_at(shader, "uDirLights", i);

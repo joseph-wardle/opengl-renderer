@@ -294,7 +294,8 @@ inline void polygon_mode(Face face, PolygonMode mode) {
 }
 
 inline UniformLocation get_uniform_location(ProgramId program, std::string_view name) {
-    return glGetUniformLocation(program, name.data());
+    const std::string owned{name};
+    return glGetUniformLocation(program, owned.c_str());
 }
 
 inline void set_uniform(UniformLocation location, float v0) {

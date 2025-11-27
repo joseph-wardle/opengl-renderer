@@ -2,6 +2,7 @@ export module scenes.hello_textures;
 
 import std;
 import render.context;
+import render.uniforms;
 import gpu.gl;
 import core.app;
 import platform.glfw;
@@ -12,6 +13,8 @@ import render.texture;
 import resources.image;
 
 export namespace scenes {
+
+namespace uniforms = render::uniforms;
 
 struct HelloTextured {
     explicit HelloTextured(bool wireframe = false) : wireframe_(wireframe) {}
@@ -140,15 +143,9 @@ struct HelloTextured {
         }
 
         shader_.use();
-        if (auto loc = gpu::gl::get_uniform_location(shader_.id(), "uBlend"); loc != -1) {
-            gpu::gl::set_uniform(loc, blend_);
-        }
-        if (auto loc = gpu::gl::get_uniform_location(shader_.id(), "uTex0"); loc != -1) {
-            gpu::gl::set_uniform(loc, 0);
-        }
-        if (auto loc = gpu::gl::get_uniform_location(shader_.id(), "uTex1"); loc != -1) {
-            gpu::gl::set_uniform(loc, 1);
-        }
+        uniforms::set_float(shader_, "uBlend", blend_);
+        uniforms::set_int(shader_, "uTex0", 0);
+        uniforms::set_int(shader_, "uTex1", 1);
         texture_a_.bind(0);
         texture_b_.bind(1);
         vao_.bind();

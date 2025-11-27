@@ -2,8 +2,8 @@ export module render.material;
 
 import std;
 import core.glm;
-import gpu.gl;
 import render.shader;
+import render.uniforms;
 
 export namespace render {
 
@@ -14,22 +14,15 @@ struct PhongMaterial {
     float      shininess{32.0f};
 
     void apply(const Shader& shader, std::string_view prefix) const {
-        const auto program = shader.id();
-        auto set_vec3 = [&](std::string_view name, const core::Vec3& v) {
-            if (auto loc = gpu::gl::get_uniform_location(program, std::string(prefix).append(name).c_str()); loc != -1) {
-                gpu::gl::set_uniform_vec3(loc, value_ptr(v));
-            }
-        };
-        auto set_float = [&](std::string_view name, float v) {
-            if (auto loc = gpu::gl::get_uniform_location(program, std::string(prefix).append(name).c_str()); loc != -1) {
-                gpu::gl::set_uniform(loc, v);
-            }
-        };
+        const auto ambient_name  = uniforms::with_field(prefix, ".ambient");
+        const auto diffuse_name  = uniforms::with_field(prefix, ".diffuse");
+        const auto specular_name = uniforms::with_field(prefix, ".specular");
+        const auto shininess_name = uniforms::with_field(prefix, ".shininess");
 
-        set_vec3(".ambient", ambient);
-        set_vec3(".diffuse", diffuse);
-        set_vec3(".specular", specular);
-        set_float(".shininess", shininess);
+        uniforms::set_vec3(shader, ambient_name, ambient);
+        uniforms::set_vec3(shader, diffuse_name, diffuse);
+        uniforms::set_vec3(shader, specular_name, specular);
+        uniforms::set_float(shader, shininess_name, shininess);
     }
 };
 

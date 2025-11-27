@@ -2,28 +2,10 @@ export module render.lights;
 
 import std;
 import core.glm;
-import gpu.gl;
 import render.shader;
+import render.uniforms;
 
 export namespace render {
-
-namespace detail {
-inline void set_vec3(const Shader& shader, std::string_view name, const core::Vec3& v) {
-    if (auto loc = gpu::gl::get_uniform_location(shader.id(), std::string(name).c_str()); loc != -1) {
-        gpu::gl::set_uniform_vec3(loc, value_ptr(v));
-    }
-}
-inline void set_float(const Shader& shader, std::string_view name, float v) {
-    if (auto loc = gpu::gl::get_uniform_location(shader.id(), std::string(name).c_str()); loc != -1) {
-        gpu::gl::set_uniform(loc, v);
-    }
-}
-inline void set_int(const Shader& shader, std::string_view name, int v) {
-    if (auto loc = gpu::gl::get_uniform_location(shader.id(), std::string(name).c_str()); loc != -1) {
-        gpu::gl::set_uniform(loc, v);
-    }
-}
-} // namespace detail
 
 struct DirectionalLight {
     core::Vec3 direction{ -0.2f, -1.0f, -0.3f };
@@ -31,14 +13,13 @@ struct DirectionalLight {
     float      intensity{0.0f}; // disabled by default
 
     void apply(const Shader& shader, std::string_view prefix) const {
-        detail::set_vec3(shader, std::string(prefix).append(".direction"), direction);
-        detail::set_vec3(shader, std::string(prefix).append(".color"), color);
-        detail::set_float(shader, std::string(prefix).append(".intensity"), intensity);
+        uniforms::set_vec3(shader, uniforms::with_field(prefix, ".direction"), direction);
+        uniforms::set_vec3(shader, uniforms::with_field(prefix, ".color"), color);
+        uniforms::set_float(shader, uniforms::with_field(prefix, ".intensity"), intensity);
     }
 
     void apply_at(const Shader& shader, std::string_view array_name, int index) const {
-        std::string base = std::string(array_name) + "[" + std::to_string(index) + "]";
-        apply(shader, base);
+        apply(shader, uniforms::index_into(array_name, index));
     }
 };
 
@@ -51,17 +32,16 @@ struct PointLight {
     float      quadratic{0.032f};
 
     void apply(const Shader& shader, std::string_view prefix) const {
-        detail::set_vec3(shader, std::string(prefix).append(".position"), position);
-        detail::set_vec3(shader, std::string(prefix).append(".color"), color);
-        detail::set_float(shader, std::string(prefix).append(".intensity"), intensity);
-        detail::set_float(shader, std::string(prefix).append(".constant"), constant);
-        detail::set_float(shader, std::string(prefix).append(".linear"), linear);
-        detail::set_float(shader, std::string(prefix).append(".quadratic"), quadratic);
+        uniforms::set_vec3(shader, uniforms::with_field(prefix, ".position"), position);
+        uniforms::set_vec3(shader, uniforms::with_field(prefix, ".color"), color);
+        uniforms::set_float(shader, uniforms::with_field(prefix, ".intensity"), intensity);
+        uniforms::set_float(shader, uniforms::with_field(prefix, ".constant"), constant);
+        uniforms::set_float(shader, uniforms::with_field(prefix, ".linear"), linear);
+        uniforms::set_float(shader, uniforms::with_field(prefix, ".quadratic"), quadratic);
     }
 
     void apply_at(const Shader& shader, std::string_view array_name, int index) const {
-        std::string base = std::string(array_name) + "[" + std::to_string(index) + "]";
-        apply(shader, base);
+        apply(shader, uniforms::index_into(array_name, index));
     }
 };
 
@@ -77,20 +57,19 @@ struct SpotLight {
     float      quadratic{0.032f};
 
     void apply(const Shader& shader, std::string_view prefix) const {
-        detail::set_vec3(shader, std::string(prefix).append(".position"), position);
-        detail::set_vec3(shader, std::string(prefix).append(".direction"), direction);
-        detail::set_vec3(shader, std::string(prefix).append(".color"), color);
-        detail::set_float(shader, std::string(prefix).append(".intensity"), intensity);
-        detail::set_float(shader, std::string(prefix).append(".inner_cos"), inner_cos);
-        detail::set_float(shader, std::string(prefix).append(".outer_cos"), outer_cos);
-        detail::set_float(shader, std::string(prefix).append(".constant"), constant);
-        detail::set_float(shader, std::string(prefix).append(".linear"), linear);
-        detail::set_float(shader, std::string(prefix).append(".quadratic"), quadratic);
+        uniforms::set_vec3(shader, uniforms::with_field(prefix, ".position"), position);
+        uniforms::set_vec3(shader, uniforms::with_field(prefix, ".direction"), direction);
+        uniforms::set_vec3(shader, uniforms::with_field(prefix, ".color"), color);
+        uniforms::set_float(shader, uniforms::with_field(prefix, ".intensity"), intensity);
+        uniforms::set_float(shader, uniforms::with_field(prefix, ".inner_cos"), inner_cos);
+        uniforms::set_float(shader, uniforms::with_field(prefix, ".outer_cos"), outer_cos);
+        uniforms::set_float(shader, uniforms::with_field(prefix, ".constant"), constant);
+        uniforms::set_float(shader, uniforms::with_field(prefix, ".linear"), linear);
+        uniforms::set_float(shader, uniforms::with_field(prefix, ".quadratic"), quadratic);
     }
 
     void apply_at(const Shader& shader, std::string_view array_name, int index) const {
-        std::string base = std::string(array_name) + "[" + std::to_string(index) + "]";
-        apply(shader, base);
+        apply(shader, uniforms::index_into(array_name, index));
     }
 };
 
