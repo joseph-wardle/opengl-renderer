@@ -1,6 +1,7 @@
 export module scenes.hello_triangle;
 
 import std;
+import render.context;
 import gpu.gl;
 import core.app;
 import platform.glfw;
@@ -11,6 +12,8 @@ import render.shader;
 export namespace scenes {
 
 struct HelloTriangle {
+    render::Context ctx{};
+
     void on_init() {
         constexpr std::array<float, 18> vertices{
            // position           // color
@@ -72,8 +75,7 @@ struct HelloTriangle {
     }
 
     void on_render() {
-        gpu::gl::clear_color(0.2f, 0.3f, 0.3f, 1.0f);
-        gpu::gl::clear(gpu::gl::COLOR_BUFFER_BIT);
+        ctx.begin_frame(render::FrameClear{0.2f, 0.3f, 0.3f, 1.0f});
         
         if (!vao_.is_valid()) {
             return;
@@ -91,7 +93,7 @@ struct HelloTriangle {
     void on_gui() {}
 
     void on_resize(int width, int height) {
-        gpu::gl::viewport(0, 0, width, height);
+        ctx.set_viewport(width, height);
     }
 private:
     render::VertexArray  vao_{};

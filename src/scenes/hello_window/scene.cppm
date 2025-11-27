@@ -1,12 +1,14 @@
 export module scenes.hello_window;
 
-import gpu.gl;
+import render.context;
 import core.app;
 import platform.glfw;
 
 export namespace scenes {
 
 struct HelloWindow {
+    render::Context ctx{};
+
     void on_init() {
         // initialization code later
     }
@@ -16,8 +18,7 @@ struct HelloWindow {
     }
 
     void on_render() {
-        gpu::gl::clear_color(0.2f, 0.3f, 0.3f, 1.0f);
-        gpu::gl::clear(gpu::gl::COLOR_BUFFER_BIT);
+        ctx.begin_frame(render::FrameClear{0.2f, 0.3f, 0.3f, 1.0f});
     }
 
     void on_gui() {}

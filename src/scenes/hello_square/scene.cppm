@@ -1,6 +1,7 @@
 export module scenes.hello_square;
 
 import std;
+import render.context;
 import gpu.gl;
 import core.app;
 import platform.glfw;
@@ -12,6 +13,7 @@ export namespace scenes {
 
 struct HelloSquare {
     explicit HelloSquare(bool wireframe = false) : wireframe_(wireframe) {}
+    render::Context ctx{};
 
     void on_init() {
         constexpr std::array<float, 12> vertices{
@@ -79,10 +81,7 @@ struct HelloSquare {
         }
         shader_ = std::move(*shader_result);
 
-        gpu::gl::polygon_mode(
-            gpu::gl::Face::front_and_back,
-            wireframe_ ? gpu::gl::PolygonMode::line : gpu::gl::PolygonMode::fill
-        );
+        ctx.set_wireframe(wireframe_);
     }
     
     void on_update(core::DeltaTime dt, const platform::InputState&) {
@@ -90,8 +89,7 @@ struct HelloSquare {
     }
 
     void on_render() {
-        gpu::gl::clear_color(0.1f, 0.1f, 0.1f, 1.0f);
-        gpu::gl::clear(gpu::gl::COLOR_BUFFER_BIT);
+        ctx.begin_frame(render::FrameClear{0.1f, 0.1f, 0.1f, 1.0f});
         
         if (!vao_.is_valid() || !ibo_.is_valid()) {
             return;
@@ -114,7 +112,7 @@ struct HelloSquare {
     void on_gui() {}
 
     void on_resize(int width, int height) {
-        gpu::gl::viewport(0, 0, width, height);
+        ctx.set_viewport(width, height);
     }
 private:
     bool                 wireframe_{false};

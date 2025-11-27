@@ -3,6 +3,7 @@ module;
 export module scenes.hello_camera;
 
 import std;
+import render.context;
 import gpu.gl;
 import core.app;
 import core.glm;
@@ -26,8 +27,9 @@ struct CubeInstance {
 };
 
 struct HelloCamera {
+    render::Context ctx{};
     void on_init() {
-        gpu::gl::enable_depth_test(true);
+        ctx.set_depth_test(true);
 
         constexpr std::array<float, 180> vertices = {
             // positions           // uvs
@@ -165,17 +167,13 @@ struct HelloCamera {
     }
 
     void on_render() {
-        gpu::gl::clear_color(0.05f, 0.05f, 0.08f, 1.0f);
-        gpu::gl::clear(gpu::gl::COLOR_BUFFER_BIT | gpu::gl::DEPTH_BUFFER_BIT);
+        ctx.begin_frame(render::FrameClear{0.05f, 0.05f, 0.08f, 1.0f});
 
         if (!vao_.is_valid() || shader_.id() == 0 || !texture_a_.is_valid() || !texture_b_.is_valid()) {
             return;
         }
 
-        const auto polygon_mode = wireframe_
-            ? gpu::gl::PolygonMode::line
-            : gpu::gl::PolygonMode::fill;
-        gpu::gl::polygon_mode(gpu::gl::Face::front_and_back, polygon_mode);
+        ctx.set_wireframe(wireframe_);
 
         const auto view = camera_.view();
         const auto proj = camera_.projection();
@@ -212,7 +210,7 @@ struct HelloCamera {
         }
 
         render::VertexArray::unbind();
-        gpu::gl::polygon_mode(gpu::gl::Face::front_and_back, gpu::gl::PolygonMode::fill);
+        ctx.set_wireframe(false);
     }
 
     void on_gui() {
@@ -250,7 +248,7 @@ struct HelloCamera {
     }
 
     void on_resize(int width, int height) {
-        gpu::gl::viewport(0, 0, width, height);
+        ctx.set_viewport(width, height);
         aspect_ratio_ = height > 0 ? static_cast<float>(width) / static_cast<float>(height) : 1.0f;
         camera_.set_aspect(aspect_ratio_);
     }

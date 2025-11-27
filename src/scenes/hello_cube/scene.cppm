@@ -1,6 +1,7 @@
 export module scenes.hello_cube;
 
 import std;
+import render.context;
 import gpu.gl;
 import core.app;
 import core.glm;
@@ -145,7 +146,7 @@ struct HelloCube {
         texture_a_ = std::move(*tex_a);
         texture_b_ = std::move(*tex_b);
 
-        gpu::gl::enable_depth_test(true);
+        ctx_.set_depth_test(true);
     }
 
     void on_update(core::DeltaTime dt, const platform::InputState&) {
@@ -156,8 +157,7 @@ struct HelloCube {
     }
 
     void on_render() {
-        gpu::gl::clear_color(0.05f, 0.05f, 0.08f, 1.0f);
-        gpu::gl::clear(gpu::gl::COLOR_BUFFER_BIT | gpu::gl::DEPTH_BUFFER_BIT);
+        ctx_.begin_frame(render::FrameClear{0.05f, 0.05f, 0.08f, 1.0f});
 
         if (!vao_.is_valid() || shader_.id() == 0 || !texture_a_.is_valid() || !texture_b_.is_valid()) {
             return;
@@ -195,12 +195,12 @@ struct HelloCube {
     void on_gui() {}
 
     void on_resize(int width, int height) {
-        gpu::gl::viewport(0, 0, width, height);
+        ctx_.set_viewport(width, height);
         aspect_ratio_ = height > 0 ? static_cast<float>(width) / static_cast<float>(height) : 1.0f;
     }
 
 private:
-    bool              wireframe_{false};
+    render::Context     ctx_{};
     float             time_{0.0f};
     float             blend_{0.5f};
     float             bounce_offset_{0.0f};

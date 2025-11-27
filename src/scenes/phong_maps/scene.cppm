@@ -3,6 +3,7 @@ export module scenes.phong_maps;
 import std;
 import core.app;
 import core.glm;
+import render.context;
 import gpu.gl;
 import platform.glfw;
 import render.shader;
@@ -17,8 +18,9 @@ import ui.imgui;
 export namespace scenes {
 
 struct PhongMaps {
+    render::Context ctx{};
     void on_init() {
-        gpu::gl::enable_depth_test(true);
+        ctx.set_depth_test(true);
 
         if (!create_meshes()) {
             return;
@@ -78,8 +80,7 @@ struct PhongMaps {
     }
 
     void on_render() {
-        gpu::gl::clear_color(0.02f, 0.02f, 0.04f, 1.0f);
-        gpu::gl::clear(gpu::gl::COLOR_BUFFER_BIT | gpu::gl::DEPTH_BUFFER_BIT);
+        ctx.begin_frame(render::FrameClear{0.02f, 0.02f, 0.04f, 1.0f});
 
         if (!shader_.id() || !floor_shader_.id()
             || !cube_mesh_.is_valid() || !floor_mesh_.is_valid()
@@ -115,7 +116,7 @@ struct PhongMaps {
     }
 
     void on_resize(int width, int height) {
-        gpu::gl::viewport(0, 0, width, height);
+        ctx.set_viewport(width, height);
         aspect_ = height > 0 ? static_cast<float>(width) / static_cast<float>(height) : 1.0f;
         camera_.set_aspect(aspect_);
     }
