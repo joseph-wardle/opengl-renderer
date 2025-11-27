@@ -50,19 +50,23 @@ struct PhongMaps {
         }
 
         camera_ = render::Camera(core::Vec3{0.0f, 1.5f, 5.0f}, aspect_);
-        dir_lights_.push_back(render::DirectionalLight{
-            .direction = core::Vec3{-0.3f, -1.0f, -0.2f},
-            .color = core::Vec3{1.0f},
-            .intensity = 0.3f
-        });
-        point_lights_.push_back(render::PointLight{
-            .position = core::Vec3{2.0f, 3.0f, 2.0f},
-            .color = core::Vec3{1.0f},
-            .intensity = 2.0f,
-            .constant = 1.0f,
-            .linear = 0.045f,
-            .quadratic = 0.0075f
-        });
+        if (dir_count_ < dir_capacity) {
+            dir_lights_[dir_count_++] = render::DirectionalLight{
+                .direction = core::Vec3{-0.3f, -1.0f, -0.2f},
+                .color = core::Vec3{1.0f},
+                .intensity = 0.3f
+            };
+        }
+        if (point_count_ < point_capacity) {
+            point_lights_[point_count_++] = render::PointLight{
+                .position = core::Vec3{2.0f, 3.0f, 2.0f},
+                .color = core::Vec3{1.0f},
+                .intensity = 2.0f,
+                .constant = 1.0f,
+                .linear = 0.045f,
+                .quadratic = 0.0075f
+            };
+        }
         // Spot off by default; add here if desired.
     }
 
@@ -256,21 +260,17 @@ private:
     }
 
     void detail_upload_lights(const render::Shader& shader) {
-        const int dir_count = static_cast<int>(std::min(dir_lights_.size(), dir_capacity));
-        const int point_count = static_cast<int>(std::min(point_lights_.size(), point_capacity));
-        const int spot_count = static_cast<int>(std::min(spot_lights_.size(), spot_capacity));
+        render::detail::set_int(shader, "uDirCount", dir_count_);
+        render::detail::set_int(shader, "uPointCount", point_count_);
+        render::detail::set_int(shader, "uSpotCount", spot_count_);
 
-        render::detail::set_int(shader, "uDirCount", dir_count);
-        render::detail::set_int(shader, "uPointCount", point_count);
-        render::detail::set_int(shader, "uSpotCount", spot_count);
-
-        for (int i = 0; i < dir_count; ++i) {
+        for (int i = 0; i < dir_count_; ++i) {
             dir_lights_[static_cast<std::size_t>(i)].apply_at(shader, "uDirLights", i);
         }
-        for (int i = 0; i < point_count; ++i) {
+        for (int i = 0; i < point_count_; ++i) {
             point_lights_[static_cast<std::size_t>(i)].apply_at(shader, "uPointLights", i);
         }
-        for (int i = 0; i < spot_count; ++i) {
+        for (int i = 0; i < spot_count_; ++i) {
             spot_lights_[static_cast<std::size_t>(i)].apply_at(shader, "uSpotLights", i);
         }
     }
@@ -285,12 +285,15 @@ private:
     render::Texture2D  diffuse_map_{};
     render::Texture2D  specular_map_{};
     render::Camera     camera_{core::Vec3{0.0f, 1.5f, 5.0f}, aspect_};
-    static constexpr std::size_t dir_capacity{4};
-    static constexpr std::size_t point_capacity{4};
-    static constexpr std::size_t spot_capacity{2};
-    std::vector<render::DirectionalLight> dir_lights_{};
-    std::vector<render::PointLight>       point_lights_{};
-    std::vector<render::SpotLight>        spot_lights_{};
+    static constexpr int dir_capacity{4};
+    static constexpr int point_capacity{4};
+    static constexpr int spot_capacity{2};
+    std::array<render::DirectionalLight, dir_capacity> dir_lights_{};
+    std::array<render::PointLight, point_capacity>     point_lights_{};
+    std::array<render::SpotLight, spot_capacity>       spot_lights_{};
+    int dir_count_{0};
+    int point_count_{0};
+    int spot_count_{0};
     render::PhongMaterial cube_material_{
         .ambient = core::Vec3{0.2f},
         .diffuse = core::Vec3{0.8f},
