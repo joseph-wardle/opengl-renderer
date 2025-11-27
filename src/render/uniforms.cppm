@@ -8,9 +8,43 @@ import gpu.gl;
 export namespace render::uniforms {
 
 namespace detail {
+struct UniformKey {
+    gpu::gl::ProgramId program{};
+    std::string        name;
+
+    friend bool operator==(const UniformKey& a, const UniformKey& b) noexcept {
+        return a.program == b.program && a.name == b.name;
+    }
+};
+
+struct UniformKeyHash {
+    std::size_t operator()(const UniformKey& key) const noexcept {
+        const auto h_prog = std::hash<gpu::gl::ProgramId>{}(key.program);
+        const auto h_name = std::hash<std::string>{}(key.name);
+        return h_prog ^ (h_name + 0x9e3779b97f4a7c15ULL + (h_prog << 6) + (h_prog >> 2));
+    }
+};
+
 inline gpu::gl::UniformLocation locate(const Shader& shader, std::string_view name) {
+    static std::unordered_map<UniformKey, gpu::gl::UniformLocation, UniformKeyHash> cache;
+    static std::mutex cache_mutex;
+
     std::string owned{name};
-    return gpu::gl::get_uniform_location(shader.id(), owned);
+    const UniformKey key{shader.id(), owned};
+
+    {
+        std::scoped_lock lock{cache_mutex};
+        if (const auto it = cache.find(key); it != cache.end()) {
+            return it->second;
+        }
+    }
+
+    const auto loc = gpu::gl::get_uniform_location(shader.id(), owned);
+    {
+        std::scoped_lock lock{cache_mutex};
+        cache.emplace(key, loc);
+    }
+    return loc;
 }
 
 inline std::string join(std::string_view prefix, std::string_view field) {
@@ -81,4 +115,3 @@ inline std::string index_into(std::string_view array_name, int index) {
 }
 
 } // namespace render::uniforms
-
