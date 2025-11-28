@@ -1,10 +1,10 @@
 import core.app;
-import scenes.phong_maps;
+import scenes.hello_obj;
 
 auto main() -> int {
     core::AppConfig cfg{
         .vsync = false,
     };
-    core::Application app{cfg, scenes::PhongMaps{}};
+    core::Application app{cfg, scenes::HelloObj{}};
     return app.run();
 }

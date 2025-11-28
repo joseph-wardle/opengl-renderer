@@ -13,6 +13,7 @@ struct ObjMesh {
     std::vector<float> normals;   // xyz triplets (optional)
     std::vector<float> texcoords; // uv pairs (optional)
     std::vector<unsigned int> indices;
+    std::array<float, 3> diffuse{1.0f, 1.0f, 1.0f};
 };
 
 struct ObjModel {
@@ -40,6 +41,7 @@ load_obj(const std::filesystem::path& path, bool triangulate = true) {
 
     const auto& attrib = reader.GetAttrib();
     const auto& shapes = reader.GetShapes();
+    const auto& materials = reader.GetMaterials();
 
     ObjModel model{};
     model.meshes.reserve(shapes.size());
@@ -54,6 +56,15 @@ load_obj(const std::filesystem::path& path, bool triangulate = true) {
         mesh.positions.reserve(shape.mesh.indices.size() * 3);
         if (has_normals)  mesh.normals.reserve(shape.mesh.indices.size() * 3);
         if (has_texcoords) mesh.texcoords.reserve(shape.mesh.indices.size() * 2);
+
+        // Use the first material on this shape if present.
+        if (!shape.mesh.material_ids.empty()) {
+            const int mat_id = shape.mesh.material_ids.front();
+            if (mat_id >= 0 && mat_id < static_cast<int>(materials.size())) {
+                const auto& m = materials[static_cast<std::size_t>(mat_id)];
+                mesh.diffuse = {m.diffuse[0], m.diffuse[1], m.diffuse[2]};
+            }
+        }
 
         for (const auto& idx : shape.mesh.indices) {
             const int vi = idx.vertex_index * 3;
