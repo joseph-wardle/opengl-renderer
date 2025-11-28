@@ -4,7 +4,6 @@ import std;
 import core.app;
 import core.glm;
 import render.context;
-import render.uniforms;
 import render.primitives;
 import gpu.gl;
 import platform.glfw;
@@ -18,8 +17,6 @@ import resources.image;
 import ui.imgui;
 
 export namespace scenes {
-
-namespace uniforms = render::uniforms;
 
 struct PhongMaps {
     render::Context ctx{};
@@ -100,8 +97,8 @@ struct PhongMaps {
         upload_common_uniforms(shader_, view, proj);
         diffuse_map_.bind(0);
         specular_map_.bind(1);
-        uniforms::set_int(shader_, "uDiffuseMap", 0);
-        uniforms::set_int(shader_, "uSpecularMap", 1);
+        shader_.set_int("uDiffuseMap", 0);
+        shader_.set_int("uSpecularMap", 1);
         core::Mat4 cube_model = core::mul(
             translate(core::Mat4{1.0f}, core::Vec3{0.0f, 0.75f, 0.0f}),
             rotate(core::Mat4{1.0f}, time_ * 0.6f, core::Vec3{0.0f, 1.0f, 0.0f})
@@ -177,26 +174,26 @@ private:
     }
 
     void upload_common_uniforms(const render::Shader& shader, const core::Mat4& view, const core::Mat4& proj) {
-        uniforms::set_mat4(shader, "uView", view);
-        uniforms::set_mat4(shader, "uProjection", proj);
-        uniforms::set_vec3(shader, "uViewPos", camera_.position());
+        shader.set_mat4("uView", view);
+        shader.set_mat4("uProjection", proj);
+        shader.set_vec3("uViewPos", camera_.position());
         // Upload light counts
         detail_upload_lights(shader);
     }
 
     void draw_mesh(const render::Shader& shader, const render::Mesh& mesh, const core::Mat4& model, const render::PhongMaterial& material, const core::Vec3& color = core::Vec3{1.0f}) {
         const core::Mat3 normal_matrix = transpose(inverse(core::Mat3(model)));
-        uniforms::set_mat4(shader, "uModel", model);
-        uniforms::set_mat3(shader, "uNormalMatrix", normal_matrix);
-        uniforms::set_vec3(shader, "uColor", color);
+        shader.set_mat4("uModel", model);
+        shader.set_mat3("uNormalMatrix", normal_matrix);
+        shader.set_vec3("uColor", color);
         material.apply(shader, "uMaterial");
         mesh.draw();
     }
 
     void detail_upload_lights(const render::Shader& shader) {
-        uniforms::set_int(shader, "uDirCount", dir_count_);
-        uniforms::set_int(shader, "uPointCount", point_count_);
-        uniforms::set_int(shader, "uSpotCount", spot_count_);
+        shader.set_int("uDirCount", dir_count_);
+        shader.set_int("uPointCount", point_count_);
+        shader.set_int("uSpotCount", spot_count_);
 
         for (int i = 0; i < dir_count_; ++i) {
             dir_lights_[static_cast<std::size_t>(i)].apply_at(shader, "uDirLights", i);

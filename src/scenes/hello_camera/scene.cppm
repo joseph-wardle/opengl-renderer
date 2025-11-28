@@ -4,7 +4,6 @@ export module scenes.hello_camera;
 
 import std;
 import render.context;
-import render.uniforms;
 import render.primitives;
 import gpu.gl;
 import core.app;
@@ -18,8 +17,6 @@ import resources.image;
 import ui.imgui;
 
 export namespace scenes {
-
-namespace uniforms = render::uniforms;
 
 struct CubeInstance {
     core::Vec3 position;
@@ -107,8 +104,8 @@ struct HelloCamera {
         const auto proj = camera_.projection();
 
         shader_.use();
-        uniforms::set_int(shader_, "uTex0", 0);
-        uniforms::set_int(shader_, "uTex1", 1);
+        shader_.set_int("uTex0", 0);
+        shader_.set_int("uTex1", 1);
 
         texture_a_.bind(0);
         texture_b_.bind(1);
@@ -122,8 +119,8 @@ struct HelloCamera {
                 );
             const core::Mat4 mvp = core::mul(core::mul(proj, view), model);
 
-            uniforms::set_mat4(shader_, "uMVP", mvp);
-            uniforms::set_float(shader_, "uBlend", blend_);
+            shader_.set_mat4("uMVP", mvp);
+            shader_.set_float("uBlend", blend_);
 
             cube_mesh_.draw();
         }

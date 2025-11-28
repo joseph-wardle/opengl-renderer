@@ -2,7 +2,6 @@ export module scenes.hello_textures;
 
 import std;
 import render.context;
-import render.uniforms;
 import gpu.gl;
 import core.app;
 import platform.glfw;
@@ -13,8 +12,6 @@ import render.texture;
 import resources.image;
 
 export namespace scenes {
-
-namespace uniforms = render::uniforms;
 
 struct HelloTextured {
     explicit HelloTextured(bool wireframe = false) : wireframe_(wireframe) {}
@@ -143,9 +140,9 @@ struct HelloTextured {
         }
 
         shader_.use();
-        uniforms::set_float(shader_, "uBlend", blend_);
-        uniforms::set_int(shader_, "uTex0", 0);
-        uniforms::set_int(shader_, "uTex1", 1);
+        shader_.set_float("uBlend", blend_);
+        shader_.set_int("uTex0", 0);
+        shader_.set_int("uTex1", 1);
         texture_a_.bind(0);
         texture_b_.bind(1);
         vao_.bind();

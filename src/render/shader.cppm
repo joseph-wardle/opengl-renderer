@@ -2,6 +2,7 @@ export module render.shader;
 
 import std;
 import gpu.gl;
+import core.glm;
 
 export namespace render {
 
@@ -132,10 +133,62 @@ public:
         gpu::gl::use_program(id_);
     }
 
+    bool set_float(std::string_view name, float value) const noexcept {
+        if (auto loc = locate_uniform(name); loc != -1) {
+            gpu::gl::set_uniform(loc, value);
+            return true;
+        }
+        return false;
+    }
+
+    bool set_int(std::string_view name, int value) const noexcept {
+        if (auto loc = locate_uniform(name); loc != -1) {
+            gpu::gl::set_uniform(loc, value);
+            return true;
+        }
+        return false;
+    }
+
+    bool set_vec3(std::string_view name, const core::Vec3& value) const noexcept {
+        if (auto loc = locate_uniform(name); loc != -1) {
+            gpu::gl::set_uniform_vec3(loc, value_ptr(value));
+            return true;
+        }
+        return false;
+    }
+
+    bool set_mat3(std::string_view name, const core::Mat3& value) const noexcept {
+        if (auto loc = locate_uniform(name); loc != -1) {
+            gpu::gl::set_uniform_mat3(loc, value_ptr(value));
+            return true;
+        }
+        return false;
+    }
+
+    bool set_mat4(std::string_view name, const core::Mat4& value) const noexcept {
+        if (auto loc = locate_uniform(name); loc != -1) {
+            gpu::gl::set_uniform_mat4(loc, value_ptr(value));
+            return true;
+        }
+        return false;
+    }
+
     [[nodiscard]] gpu::gl::ProgramId id() const noexcept { return id_; }
 
 private:
+    [[nodiscard]] gpu::gl::UniformLocation locate_uniform(std::string_view name) const {
+        const std::string key{name};
+        const auto it = uniform_cache_.find(key);
+        if (it != uniform_cache_.end()) {
+            return it->second;
+        }
+        const auto loc = gpu::gl::get_uniform_location(id_, key);
+        uniform_cache_.emplace(key, loc);
+        return loc;
+    }
+
     gpu::gl::ProgramId id_{0};
+    mutable std::unordered_map<std::string, gpu::gl::UniformLocation> uniform_cache_{};
 };
 
 } // namespace render

@@ -4,7 +4,6 @@ import std;
 import core.app;
 import core.glm;
 import render.context;
-import render.uniforms;
 import render.primitives;
 import gpu.gl;
 import platform.glfw;
@@ -16,8 +15,6 @@ import render.camera;
 import ui.imgui;
 
 export namespace scenes {
-
-namespace uniforms = render::uniforms;
 
 struct PhongCube {
     render::Context ctx{};
@@ -108,17 +105,17 @@ private:
     }
 
     void upload_common_uniforms(const core::Mat4& view, const core::Mat4& proj) {
-        uniforms::set_mat4(shader_, "uView", view);
-        uniforms::set_mat4(shader_, "uProjection", proj);
-        uniforms::set_vec3(shader_, "uViewPos", camera_.position());
+        shader_.set_mat4("uView", view);
+        shader_.set_mat4("uProjection", proj);
+        shader_.set_vec3("uViewPos", camera_.position());
         light_.apply(shader_, "uLight");
     }
 
     void draw_mesh(const render::Mesh& mesh, const core::Mat4& model, const core::Vec3& base_color, const render::PhongMaterial& material) {
         const core::Mat3 normal_matrix = transpose(inverse(core::Mat3(model)));
-        uniforms::set_mat4(shader_, "uModel", model);
-        uniforms::set_mat3(shader_, "uNormalMatrix", normal_matrix);
-        uniforms::set_vec3(shader_, "uBaseColor", base_color);
+        shader_.set_mat4("uModel", model);
+        shader_.set_mat3("uNormalMatrix", normal_matrix);
+        shader_.set_vec3("uBaseColor", base_color);
 
         material.apply(shader_, "uMaterial");
         mesh.draw();

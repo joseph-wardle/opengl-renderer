@@ -99,7 +99,6 @@ target_sources(opengl_renderer
         src/render/material.cppm
         src/render/lights.cppm
         src/render/context.cppm
-        src/render/uniforms.cppm
         src/render/primitives.cppm
         src/scenes/phong_cube/scene.cppm
         src/scenes/phong_maps/scene.cppm

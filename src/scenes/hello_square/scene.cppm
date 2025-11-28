@@ -2,7 +2,6 @@ export module scenes.hello_square;
 
 import std;
 import render.context;
-import render.uniforms;
 import gpu.gl;
 import core.app;
 import platform.glfw;
@@ -11,8 +10,6 @@ import render.buffer;
 import render.shader;
 
 export namespace scenes {
-
-namespace uniforms = render::uniforms;
 
 struct HelloSquare {
     explicit HelloSquare(bool wireframe = false) : wireframe_(wireframe) {}
@@ -102,7 +99,7 @@ struct HelloSquare {
         }
 
         shader_.use();
-        uniforms::set_float(shader_, "uTime", time_);
+        shader_.set_float("uTime", time_);
         vao_.bind();
         ibo_.bind();
         gpu::gl::draw_elements(gpu::gl::Primitive::triangles, 6, gpu::gl::IndexType::u32);

@@ -3,7 +3,6 @@ export module render.lights;
 import std;
 import core.glm;
 import render.shader;
-import render.uniforms;
 
 export namespace render {
 
@@ -13,13 +12,18 @@ struct DirectionalLight {
     float      intensity{0.0f}; // disabled by default
 
     void apply(const Shader& shader, std::string_view prefix) const {
-        uniforms::set_vec3(shader, uniforms::with_field(prefix, ".direction"), direction);
-        uniforms::set_vec3(shader, uniforms::with_field(prefix, ".color"), color);
-        uniforms::set_float(shader, uniforms::with_field(prefix, ".intensity"), intensity);
+        std::string base{prefix};
+        shader.set_vec3(base + ".direction", direction);
+        shader.set_vec3(base + ".color", color);
+        shader.set_float(base + ".intensity", intensity);
     }
 
     void apply_at(const Shader& shader, std::string_view array_name, int index) const {
-        apply(shader, uniforms::index_into(array_name, index));
+        std::string base{array_name};
+        base.push_back('[');
+        base.append(std::to_string(index));
+        base.push_back(']');
+        apply(shader, base);
     }
 };
 
@@ -32,16 +36,21 @@ struct PointLight {
     float      quadratic{0.032f};
 
     void apply(const Shader& shader, std::string_view prefix) const {
-        uniforms::set_vec3(shader, uniforms::with_field(prefix, ".position"), position);
-        uniforms::set_vec3(shader, uniforms::with_field(prefix, ".color"), color);
-        uniforms::set_float(shader, uniforms::with_field(prefix, ".intensity"), intensity);
-        uniforms::set_float(shader, uniforms::with_field(prefix, ".constant"), constant);
-        uniforms::set_float(shader, uniforms::with_field(prefix, ".linear"), linear);
-        uniforms::set_float(shader, uniforms::with_field(prefix, ".quadratic"), quadratic);
+        std::string base{prefix};
+        shader.set_vec3(base + ".position", position);
+        shader.set_vec3(base + ".color", color);
+        shader.set_float(base + ".intensity", intensity);
+        shader.set_float(base + ".constant", constant);
+        shader.set_float(base + ".linear", linear);
+        shader.set_float(base + ".quadratic", quadratic);
     }
 
     void apply_at(const Shader& shader, std::string_view array_name, int index) const {
-        apply(shader, uniforms::index_into(array_name, index));
+        std::string base{array_name};
+        base.push_back('[');
+        base.append(std::to_string(index));
+        base.push_back(']');
+        apply(shader, base);
     }
 };
 
@@ -57,19 +66,24 @@ struct SpotLight {
     float      quadratic{0.032f};
 
     void apply(const Shader& shader, std::string_view prefix) const {
-        uniforms::set_vec3(shader, uniforms::with_field(prefix, ".position"), position);
-        uniforms::set_vec3(shader, uniforms::with_field(prefix, ".direction"), direction);
-        uniforms::set_vec3(shader, uniforms::with_field(prefix, ".color"), color);
-        uniforms::set_float(shader, uniforms::with_field(prefix, ".intensity"), intensity);
-        uniforms::set_float(shader, uniforms::with_field(prefix, ".inner_cos"), inner_cos);
-        uniforms::set_float(shader, uniforms::with_field(prefix, ".outer_cos"), outer_cos);
-        uniforms::set_float(shader, uniforms::with_field(prefix, ".constant"), constant);
-        uniforms::set_float(shader, uniforms::with_field(prefix, ".linear"), linear);
-        uniforms::set_float(shader, uniforms::with_field(prefix, ".quadratic"), quadratic);
+        std::string base{prefix};
+        shader.set_vec3(base + ".position", position);
+        shader.set_vec3(base + ".direction", direction);
+        shader.set_vec3(base + ".color", color);
+        shader.set_float(base + ".intensity", intensity);
+        shader.set_float(base + ".inner_cos", inner_cos);
+        shader.set_float(base + ".outer_cos", outer_cos);
+        shader.set_float(base + ".constant", constant);
+        shader.set_float(base + ".linear", linear);
+        shader.set_float(base + ".quadratic", quadratic);
     }
 
     void apply_at(const Shader& shader, std::string_view array_name, int index) const {
-        apply(shader, uniforms::index_into(array_name, index));
+        std::string base{array_name};
+        base.push_back('[');
+        base.append(std::to_string(index));
+        base.push_back(']');
+        apply(shader, base);
     }
 };
 
