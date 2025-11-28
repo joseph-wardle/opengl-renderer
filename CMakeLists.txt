@@ -44,6 +44,13 @@ CPMAddPackage(
     VERSION 1.91.0
 )
 
+CPMAddPackage(
+    NAME tinyobjloader
+    GITHUB_REPOSITORY tinyobjloader/tinyobjloader
+    VERSION 2.0.0rc10
+    OPTIONS "TINYOBJLOADER_USE_DOUBLE OFF"
+)
+
 add_library(glad STATIC external/glad/src/gl.c)
 target_include_directories(glad PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/external/glad/include)
 target_compile_features(glad PUBLIC c_std_99)
@@ -100,6 +107,8 @@ target_sources(opengl_renderer
         src/render/lights.cppm
         src/render/context.cppm
         src/render/primitives.cppm
+        src/render/tinyobj.cppm
+        src/render/model.cppm
         src/scenes/phong_cube/scene.cppm
         src/scenes/phong_maps/scene.cppm
 )
@@ -114,6 +123,7 @@ target_link_libraries(opengl_renderer PUBLIC
     glfw
     glm::glm
     imgui
+    tinyobjloader
 )
 
 target_include_directories(opengl_renderer PUBLIC
