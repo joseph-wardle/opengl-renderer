@@ -42,9 +42,9 @@ struct PhongCube {
         camera_ = render::Camera(core::Vec3{0.0f, 1.5f, 5.0f}, aspect_);
     }
 
-    void on_update(core::DeltaTime dt, const platform::InputState& input) {
+    void on_update(core::DeltaTime dt, const platform::InputState& input, bool allow_input) {
         time_ += dt.seconds;
-        if (input.is_mouse_down(platform::MouseButton::right)) {
+        if (allow_input && input.is_mouse_down(platform::MouseButton::right)) {
             camera_.update(dt, input);
         }
     }

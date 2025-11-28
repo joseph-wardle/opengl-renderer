@@ -79,7 +79,7 @@ struct HelloCube {
         ctx_.set_depth_test(true);
     }
 
-    void on_update(core::DeltaTime dt, const platform::InputState&) {
+    void on_update(core::DeltaTime dt, const platform::InputState&, bool) {
         time_ += dt.seconds;
         blend_ = 0.5f + 0.5f * std::sin(time_ * 0.5f);
         bounce_offset_ = 0.25f * std::sin(time_ * bounce_speed_);

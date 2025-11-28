@@ -70,7 +70,7 @@ struct HelloTriangle {
         shader_ = std::move(*shader_result);
     }
     
-    void on_update(core::DeltaTime, const platform::InputState&) {
+    void on_update(core::DeltaTime, const platform::InputState&, bool) {
         // handle input later
     }
 

@@ -126,7 +126,7 @@ struct HelloTextured {
         ctx.set_wireframe(wireframe_);
     }
 
-    void on_update(core::DeltaTime dt, const platform::InputState&) {
+    void on_update(core::DeltaTime dt, const platform::InputState&, bool) {
         time_ += dt.seconds;
         blend_ = 0.5f + 0.5f * std::sin(time_);
     }

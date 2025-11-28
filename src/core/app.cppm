@@ -3,6 +3,7 @@ export module core.app;
 import std;
 import platform.glfw;
 import gpu.gl;
+import ui.imgui;
 import ui.imgui_layer;
 
 export namespace core {
@@ -26,11 +27,12 @@ concept SceneConcept =
         Scene& scene,
         DeltaTime dt,
         const platform::InputState& input,
+        bool input_enabled,
         int w,
         int h
     ) {
         { scene.on_init() }            -> std::same_as<void>;
-        { scene.on_update(dt, input) } -> std::same_as<void>;
+        { scene.on_update(dt, input, input_enabled) } -> std::same_as<void>;
         { scene.on_render() }          -> std::same_as<void>;
         { scene.on_resize(w, h) }      -> std::same_as<void>;
         { scene.on_gui() }             -> std::same_as<void>;
@@ -147,9 +149,6 @@ int Application<Scene>::run() {
         auto dt   = std::chrono::duration<float>(now - last_time).count();
         last_time = now;
 
-        const bool look_active = input.is_mouse_down(platform::MouseButton::right);
-        window.set_cursor_disabled(look_active);
-
         if (input.is_down(platform::Key::escape)) {
             window.request_close();
         }
@@ -158,7 +157,12 @@ int Application<Scene>::run() {
         }
 
         imgui.begin_frame();
-        scene_.on_update(DeltaTime{dt}, input);
+        const auto& io = imgui::GetIO();
+        const bool allow_input = !io.WantCaptureKeyboard && !io.WantCaptureMouse;
+        const bool look_active = allow_input && input.is_mouse_down(platform::MouseButton::right);
+        window.set_cursor_disabled(look_active);
+
+        scene_.on_update(DeltaTime{dt}, input, allow_input);
         scene_.on_render();
         if (show_debug_ui) {
             scene_.on_gui();

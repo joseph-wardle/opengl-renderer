@@ -87,7 +87,7 @@ struct HelloSquare {
         ctx.set_wireframe(wireframe_);
     }
     
-    void on_update(core::DeltaTime dt, const platform::InputState&) {
+    void on_update(core::DeltaTime dt, const platform::InputState&, bool) {
         time_ += dt.seconds;
     }
 

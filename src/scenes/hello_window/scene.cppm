@@ -13,7 +13,7 @@ struct HelloWindow {
         // initialization code later
     }
     
-    void on_update(core::DeltaTime, const platform::InputState&) {
+    void on_update(core::DeltaTime, const platform::InputState&, bool) {
         // handle input later
     }
 

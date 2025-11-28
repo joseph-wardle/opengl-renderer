@@ -82,16 +82,14 @@ struct HelloCamera {
         camera_ = render::Camera(core::Vec3{0.0f, 0.0f, 6.0f}, aspect_ratio_);
     }
 
-    void on_update(core::DeltaTime dt, const platform::InputState& input) {
+    void on_update(core::DeltaTime dt, const platform::InputState& input, bool allow_input) {
         if (animate_cubes_) {
             anim_time_ += dt.seconds;
             blend_ = 0.5f + 0.5f * std::sin(anim_time_ * 0.4f);
         }
 
-        auto& io = imgui::GetIO();
-        const bool allow_camera_input = !io.WantCaptureKeyboard && !io.WantCaptureMouse;
-        const bool look_active = input.is_mouse_down(platform::MouseButton::right);
-        if (allow_camera_input && look_active) {
+        const bool look_active = allow_input && input.is_mouse_down(platform::MouseButton::right);
+        if (look_active) {
             camera_.update(dt, input);
         }
     }
