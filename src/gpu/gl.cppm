@@ -89,7 +89,7 @@ enum class PixelType : GLenum {
     u8 = GL_UNSIGNED_BYTE,
 };
 
-[[nodiscard]] inline bool init(LoadProc load_proc) {
+[[nodiscard]] inline bool init(LoadProc load_proc) noexcept {
     g_initialized = load_proc && gladLoadGL(load_proc) != 0;
     return g_initialized;
 }
@@ -98,19 +98,19 @@ enum class PixelType : GLenum {
 
 inline void shutdown() noexcept { g_initialized = false; }
 
-inline void viewport(int x, int y, int width, int height) {
+inline void viewport(int x, int y, int width, int height) noexcept {
     glViewport(x, y, width, height);
 }
 
-inline void clear_color(float r, float g, float b, float a) {
+inline void clear_color(float r, float g, float b, float a) noexcept {
     glClearColor(r, g, b, a);
 }
 
-inline void clear(ClearMask mask) {
+inline void clear(ClearMask mask) noexcept {
     glClear(mask);
 }
 
-inline void enable_depth_test(bool enable) {
+inline void enable_depth_test(bool enable) noexcept {
     if (enable) {
         glEnable(GL_DEPTH_TEST);
     } else {
@@ -118,13 +118,13 @@ inline void enable_depth_test(bool enable) {
     }
 }
 
-[[nodiscard]] inline BufferId create_buffer() {
+[[nodiscard]] inline BufferId create_buffer() noexcept {
     BufferId id{};
     glGenBuffers(1, &id);
     return id;
 }
 
-inline void destroy_buffer(BufferId& id) {
+inline void destroy_buffer(BufferId& id) noexcept {
     if (!g_initialized) {
         id = 0;
         return;
@@ -135,7 +135,7 @@ inline void destroy_buffer(BufferId& id) {
     }
 }
 
-inline void bind_buffer(BufferTarget target, BufferId id) {
+inline void bind_buffer(BufferTarget target, BufferId id) noexcept {
     glBindBuffer(static_cast<GLenum>(target), id);
 }
 
@@ -156,13 +156,13 @@ inline void buffer_data(
 constexpr ClearMask COLOR_BUFFER_BIT = GL_COLOR_BUFFER_BIT;
 constexpr ClearMask DEPTH_BUFFER_BIT = GL_DEPTH_BUFFER_BIT;
 
-[[nodiscard]] inline VertexArrayId create_vertex_array() {
+[[nodiscard]] inline VertexArrayId create_vertex_array() noexcept {
     VertexArrayId id{};
     glGenVertexArrays(1, &id);
     return id;
 }
 
-inline void destroy_vertex_array(VertexArrayId& id) {
+inline void destroy_vertex_array(VertexArrayId& id) noexcept {
     if (!g_initialized) {
         id = 0;
         return;
@@ -173,7 +173,7 @@ inline void destroy_vertex_array(VertexArrayId& id) {
     }
 }
 
-inline void bind_vertex_array(VertexArrayId id) {
+inline void bind_vertex_array(VertexArrayId id) noexcept {
     glBindVertexArray(id);
 }
 
@@ -184,7 +184,7 @@ inline void set_vertex_attrib_pointer(
     bool normalized,
     int stride_bytes,
     std::size_t offset_bytes
-) {
+) noexcept {
     glVertexAttribPointer(
         index,
         component_count,
@@ -195,20 +195,20 @@ inline void set_vertex_attrib_pointer(
     );
 }
 
-inline void enable_vertex_attrib_array(unsigned int index) {
+inline void enable_vertex_attrib_array(unsigned int index) noexcept {
     glEnableVertexAttribArray(index);
 }
 
-inline ShaderId create_shader(ShaderType type) {
+inline ShaderId create_shader(ShaderType type) noexcept {
     return glCreateShader(static_cast<GLenum>(type));
 }
 
-inline void set_shader_source(ShaderId shader, std::string_view source) {
+inline void set_shader_source(ShaderId shader, std::string_view source) noexcept {
     const char* src = source.data();
     glShaderSource(shader, 1, &src, nullptr);
 }
 
-inline bool compile_shader(ShaderId shader) {
+inline bool compile_shader(ShaderId shader) noexcept {
     glCompileShader(shader);
     GLint status = GL_FALSE;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
@@ -227,22 +227,22 @@ inline std::string shader_info_log(ShaderId shader) {
     return log;
 }
 
-inline void delete_shader(ShaderId& shader) {
+inline void delete_shader(ShaderId& shader) noexcept {
     if (shader != 0) {
         glDeleteShader(shader);
         shader = 0;
     }
 }
 
-inline ProgramId create_program() {
+inline ProgramId create_program() noexcept {
     return glCreateProgram();
 }
 
-inline void attach_shader(ProgramId program, ShaderId shader) {
+inline void attach_shader(ProgramId program, ShaderId shader) noexcept {
     glAttachShader(program, shader);
 }
 
-inline bool link_program(ProgramId program) {
+inline bool link_program(ProgramId program) noexcept {
     glLinkProgram(program);
     GLint status = GL_FALSE;
     glGetProgramiv(program, GL_LINK_STATUS, &status);
@@ -261,7 +261,7 @@ inline std::string program_info_log(ProgramId program) {
     return log;
 }
 
-inline void delete_program(ProgramId& program) {
+inline void delete_program(ProgramId& program) noexcept {
     if (!g_initialized) {
         program = 0;
         return;
@@ -272,15 +272,15 @@ inline void delete_program(ProgramId& program) {
     }
 }
 
-inline void use_program(ProgramId program) {
+inline void use_program(ProgramId program) noexcept {
     glUseProgram(program);
 }
 
-inline void draw_arrays(Primitive primitive, int first, int count) {
+inline void draw_arrays(Primitive primitive, int first, int count) noexcept {
     glDrawArrays(static_cast<GLenum>(primitive), first, count);
 }
 
-inline void draw_elements(Primitive primitive, int count, IndexType type, std::size_t offset_bytes = 0) {
+inline void draw_elements(Primitive primitive, int count, IndexType type, std::size_t offset_bytes = 0) noexcept {
     glDrawElements(
         static_cast<GLenum>(primitive),
         count,
@@ -289,42 +289,42 @@ inline void draw_elements(Primitive primitive, int count, IndexType type, std::s
     );
 }
 
-inline void polygon_mode(Face face, PolygonMode mode) {
+inline void polygon_mode(Face face, PolygonMode mode) noexcept {
     glPolygonMode(static_cast<GLenum>(face), static_cast<GLenum>(mode));
 }
 
-inline UniformLocation get_uniform_location(ProgramId program, std::string_view name) {
+inline UniformLocation get_uniform_location(ProgramId program, std::string_view name) noexcept {
     const std::string owned{name};
     return glGetUniformLocation(program, owned.c_str());
 }
 
-inline void set_uniform(UniformLocation location, float v0) {
+inline void set_uniform(UniformLocation location, float v0) noexcept {
     glUniform1f(location, v0);
 }
 
-inline void set_uniform(UniformLocation location, int v0) {
+inline void set_uniform(UniformLocation location, int v0) noexcept {
     glUniform1i(location, v0);
 }
 
-inline void set_uniform_mat4(UniformLocation location, const float* data) {
+inline void set_uniform_mat4(UniformLocation location, const float* data) noexcept {
     glUniformMatrix4fv(location, 1, GL_FALSE, data);
 }
 
-inline void set_uniform_mat3(UniformLocation location, const float* data) {
+inline void set_uniform_mat3(UniformLocation location, const float* data) noexcept {
     glUniformMatrix3fv(location, 1, GL_FALSE, data);
 }
 
-inline void set_uniform_vec3(UniformLocation location, const float* data) {
+inline void set_uniform_vec3(UniformLocation location, const float* data) noexcept {
     glUniform3fv(location, 1, data);
 }
 
-[[nodiscard]] inline TextureId create_texture() {
+[[nodiscard]] inline TextureId create_texture() noexcept {
     TextureId id{};
     glGenTextures(1, &id);
     return id;
 }
 
-inline void destroy_texture(TextureId& id) {
+inline void destroy_texture(TextureId& id) noexcept {
     if (!g_initialized) {
         id = 0;
         return;
@@ -335,7 +335,7 @@ inline void destroy_texture(TextureId& id) {
     }
 }
 
-inline void active_texture(unsigned int unit) {
+inline void active_texture(unsigned int unit) noexcept {
     glActiveTexture(GL_TEXTURE0 + unit);
 }
 

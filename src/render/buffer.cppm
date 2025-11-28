@@ -45,11 +45,11 @@ public:
         return *this;
     }
 
-    void bind() const {
+    void bind() const noexcept {
         gpu::gl::bind_buffer(gpu::gl::BufferTarget::array, id_);
     }
 
-    static void unbind() {
+    static void unbind() noexcept {
         gpu::gl::bind_buffer(gpu::gl::BufferTarget::array, 0);
     }
 
@@ -99,11 +99,11 @@ public:
         return *this;
     }
 
-    void bind() const {
+    void bind() const noexcept {
         gpu::gl::bind_buffer(gpu::gl::BufferTarget::element_array, id_);
     }
 
-    static void unbind() {
+    static void unbind() noexcept {
         gpu::gl::bind_buffer(gpu::gl::BufferTarget::element_array, 0);
     }
 

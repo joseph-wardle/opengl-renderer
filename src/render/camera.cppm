@@ -9,13 +9,13 @@ export namespace render {
 
 class Camera {
 public:
-    Camera(core::Vec3 position, float aspect)
+    Camera(core::Vec3 position, float aspect) noexcept
         : position_(position), aspect_(aspect) {}
 
-    void set_aspect(float aspect) { aspect_ = aspect; }
-    void set_base_speed(float speed) { base_speed_ = speed; }
+    void set_aspect(float aspect) noexcept { aspect_ = aspect; }
+    void set_base_speed(float speed) noexcept { base_speed_ = speed; }
     [[nodiscard]] float base_speed() const noexcept { return base_speed_; }
-    void set_fov(float degrees) { fov_degrees_ = std::clamp(degrees, 20.0f, 120.0f); }
+    void set_fov(float degrees) noexcept { fov_degrees_ = std::clamp(degrees, 20.0f, 120.0f); }
     [[nodiscard]] float fov() const noexcept { return fov_degrees_; }
     [[nodiscard]] float speed_multiplier() const noexcept { return speed_multiplier_; }
 

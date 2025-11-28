@@ -37,11 +37,11 @@ public:
         return *this;
     }
 
-    void bind() const {
+    void bind() const noexcept {
         gpu::gl::bind_vertex_array(id_);
     }
 
-    static void unbind() {
+    static void unbind() noexcept {
         gpu::gl::bind_vertex_array(0);
     }
 
@@ -51,7 +51,7 @@ public:
         int component_count,
         int stride_bytes,
         std::size_t offset_bytes
-    ) const {
+    ) const noexcept {
         gpu::gl::set_vertex_attrib_pointer(
             index,
             component_count,

@@ -102,12 +102,12 @@ public:
         return *this;
     }
 
-    void bind(unsigned int texture_unit = 0) const {
+    void bind(unsigned int texture_unit = 0) const noexcept {
         gpu::gl::active_texture(texture_unit);
         gpu::gl::bind_texture(gpu::gl::TextureTarget::texture_2d, id_);
     }
 
-    static void unbind() {
+    static void unbind() noexcept {
         gpu::gl::bind_texture(gpu::gl::TextureTarget::texture_2d, 0);
     }
 
