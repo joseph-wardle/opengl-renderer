@@ -14,6 +14,8 @@ struct ObjMesh {
     std::vector<float> texcoords; // uv pairs (optional)
     std::vector<unsigned int> indices;
     std::array<float, 3> diffuse{1.0f, 1.0f, 1.0f};
+    std::string diffuse_tex;
+    std::string specular_tex;
 };
 
 struct ObjModel {
@@ -63,6 +65,8 @@ load_obj(const std::filesystem::path& path, bool triangulate = true) {
             if (mat_id >= 0 && mat_id < static_cast<int>(materials.size())) {
                 const auto& m = materials[static_cast<std::size_t>(mat_id)];
                 mesh.diffuse = {m.diffuse[0], m.diffuse[1], m.diffuse[2]};
+                mesh.diffuse_tex = m.diffuse_texname;
+                mesh.specular_tex = m.specular_texname;
             }
         }
 

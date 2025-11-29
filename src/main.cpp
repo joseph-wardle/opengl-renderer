@@ -1,10 +1,10 @@
 import core.app;
-import scenes.hello_obj;
+import scenes.sponza;
 
 auto main() -> int {
     core::AppConfig cfg{
         .vsync = false,
     };
-    core::Application app{cfg, scenes::HelloObj{}};
+    core::Application app{cfg, scenes::Sponza{}};
     return app.run();
 }

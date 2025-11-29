@@ -91,8 +91,8 @@ private:
     render::Context ctx_{};
     render::Model   model_{};
     render::Shader  shader_{};
-    render::Camera  camera_{core::Vec3{0.0f, 1.0f, 4.0f}, aspect_};
     float           aspect_{16.0f / 9.0f};
+    render::Camera  camera_{core::Vec3{0.0f, 1.0f, 4.0f}, 16.0f / 9.0f};
     bool            loaded_{false};
 };
 

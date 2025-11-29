@@ -112,6 +112,7 @@ target_sources(opengl_renderer
         src/scenes/phong_cube/scene.cppm
         src/scenes/phong_maps/scene.cppm
         src/scenes/hello_obj/scene.cppm
+        src/scenes/sponza/scene.cppm
 )
 
 target_compile_options(opengl_renderer PUBLIC

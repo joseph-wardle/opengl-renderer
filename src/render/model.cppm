@@ -4,13 +4,20 @@ import std;
 import core.glm;
 import render.mesh;
 import render.tinyobj;
+import render.texture;
+import resources.image;
 
 export namespace render {
 
 struct Model {
     struct Part {
-        Mesh        mesh;
-        core::Vec3  base_color{1.0f, 1.0f, 1.0f};
+        Mesh                           mesh;
+        core::Vec3                     base_color{1.0f, 1.0f, 1.0f};
+        std::shared_ptr<Texture2D>     diffuse_map{};
+        std::shared_ptr<Texture2D>     specular_map{};
+
+        [[nodiscard]] bool has_diffuse() const noexcept { return static_cast<bool>(diffuse_map); }
+        [[nodiscard]] bool has_specular() const noexcept { return static_cast<bool>(specular_map); }
     };
     std::vector<Part> parts;
 };
@@ -28,6 +35,9 @@ load_obj_model(const std::filesystem::path& path) {
 
     Model model{};
     model.parts.reserve(obj->meshes.size());
+
+    const auto base_dir = path.parent_path();
+    std::unordered_map<std::string, std::shared_ptr<Texture2D>> texture_cache{};
 
     for (const auto& src : obj->meshes) {
         const bool has_normals   = src.normals.size() == src.positions.size();
@@ -97,10 +107,38 @@ load_obj_model(const std::filesystem::path& path) {
             src.diffuse[1],
             src.diffuse[2],
         };
-        model.parts.push_back(Model::Part{
-            .mesh = std::move(*mesh),
-            .base_color = color,
-        });
+
+        Model::Part part;
+        part.mesh = std::move(*mesh);
+        part.base_color = color;
+
+        auto load_texture = [&](const std::string& texname, std::shared_ptr<Texture2D>& out_tex) {
+            if (texname.empty()) return;
+            if (auto cached = texture_cache.find(texname); cached != texture_cache.end()) {
+                out_tex = cached->second;
+                return;
+            }
+            std::string clean = texname;
+            std::replace(clean.begin(), clean.end(), '\\', '/');
+            auto tex_path = base_dir / clean;
+            auto img = resources::load_image(tex_path.string());
+            if (!img) {
+                std::println(std::cerr, "Failed to load texture {}: {}", tex_path.string(), img.error());
+                return;
+            }
+            auto tex = Texture2D::from_image(*img, true);
+            if (!tex) {
+                std::println(std::cerr, "Failed to create texture {}: {}", tex_path.string(), tex.error());
+                return;
+            }
+            out_tex = std::make_shared<Texture2D>(std::move(*tex));
+            texture_cache.emplace(texname, out_tex);
+        };
+
+        load_texture(src.diffuse_tex, part.diffuse_map);
+        load_texture(src.specular_tex, part.specular_map);
+
+        model.parts.push_back(std::move(part));
     }
 
     return model;
