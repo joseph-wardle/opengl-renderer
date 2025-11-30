@@ -16,6 +16,7 @@ struct ObjMesh {
     std::array<float, 3> diffuse{1.0f, 1.0f, 1.0f};
     std::string diffuse_tex;
     std::string specular_tex;
+    int         material_id{-1};
 };
 
 struct ObjModel {
@@ -49,49 +50,58 @@ load_obj(const std::filesystem::path& path, bool triangulate = true) {
     model.meshes.reserve(shapes.size());
 
     for (const auto& shape : shapes) {
-        ObjMesh mesh{};
-        mesh.indices.reserve(shape.mesh.indices.size());
-
-        const bool has_normals = !attrib.normals.empty();
+        const bool has_normals   = !attrib.normals.empty();
         const bool has_texcoords = !attrib.texcoords.empty();
 
-        mesh.positions.reserve(shape.mesh.indices.size() * 3);
-        if (has_normals)  mesh.normals.reserve(shape.mesh.indices.size() * 3);
-        if (has_texcoords) mesh.texcoords.reserve(shape.mesh.indices.size() * 2);
+        std::unordered_map<int, ObjMesh> by_material{};
+        const auto face_count = shape.mesh.num_face_vertices.size();
+        by_material.reserve(std::max<std::size_t>(1, face_count));
 
-        // Use the first material on this shape if present.
-        if (!shape.mesh.material_ids.empty()) {
-            const int mat_id = shape.mesh.material_ids.front();
-            if (mat_id >= 0 && mat_id < static_cast<int>(materials.size())) {
-                const auto& m = materials[static_cast<std::size_t>(mat_id)];
-                mesh.diffuse = {m.diffuse[0], m.diffuse[1], m.diffuse[2]};
-                mesh.diffuse_tex = m.diffuse_texname;
-                mesh.specular_tex = m.specular_texname;
+        for (std::size_t face = 0; face < face_count; ++face) {
+            const int mat_id =
+                (!shape.mesh.material_ids.empty() && face < shape.mesh.material_ids.size())
+                    ? shape.mesh.material_ids[face]
+                    : -1;
+
+            auto& mesh = by_material[mat_id];
+            if (mesh.material_id == -1) {
+                mesh.material_id = mat_id;
+                if (mat_id >= 0 && mat_id < static_cast<int>(materials.size())) {
+                    const auto& m = materials[static_cast<std::size_t>(mat_id)];
+                    mesh.diffuse      = {m.diffuse[0], m.diffuse[1], m.diffuse[2]};
+                    mesh.diffuse_tex  = m.diffuse_texname;
+                    mesh.specular_tex = m.specular_texname;
+                }
+            }
+
+            // Each face is assumed to be a triangle.
+            for (int v = 0; v < 3; ++v) {
+                const auto& idx = shape.mesh.indices[face * 3 + v];
+                const int vi = idx.vertex_index * 3;
+                mesh.positions.push_back(attrib.vertices[vi + 0]);
+                mesh.positions.push_back(attrib.vertices[vi + 1]);
+                mesh.positions.push_back(attrib.vertices[vi + 2]);
+
+                if (has_normals && idx.normal_index >= 0) {
+                    const int ni = idx.normal_index * 3;
+                    mesh.normals.push_back(attrib.normals[ni + 0]);
+                    mesh.normals.push_back(attrib.normals[ni + 1]);
+                    mesh.normals.push_back(attrib.normals[ni + 2]);
+                }
+                if (has_texcoords && idx.texcoord_index >= 0) {
+                    const int ti = idx.texcoord_index * 2;
+                    mesh.texcoords.push_back(attrib.texcoords[ti + 0]);
+                    mesh.texcoords.push_back(attrib.texcoords[ti + 1]);
+                }
+
+                mesh.indices.push_back(static_cast<unsigned int>(mesh.indices.size()));
             }
         }
 
-        for (const auto& idx : shape.mesh.indices) {
-            const int vi = idx.vertex_index * 3;
-            mesh.positions.push_back(attrib.vertices[vi + 0]);
-            mesh.positions.push_back(attrib.vertices[vi + 1]);
-            mesh.positions.push_back(attrib.vertices[vi + 2]);
-
-            if (has_normals && idx.normal_index >= 0) {
-                const int ni = idx.normal_index * 3;
-                mesh.normals.push_back(attrib.normals[ni + 0]);
-                mesh.normals.push_back(attrib.normals[ni + 1]);
-                mesh.normals.push_back(attrib.normals[ni + 2]);
-            }
-            if (has_texcoords && idx.texcoord_index >= 0) {
-                const int ti = idx.texcoord_index * 2;
-                mesh.texcoords.push_back(attrib.texcoords[ti + 0]);
-                mesh.texcoords.push_back(attrib.texcoords[ti + 1]);
-            }
-
-            mesh.indices.push_back(static_cast<unsigned int>(mesh.indices.size()));
+        for (auto& [mat_id, mesh] : by_material) {
+            (void)mat_id;
+            model.meshes.push_back(std::move(mesh));
         }
-
-        model.meshes.push_back(std::move(mesh));
     }
 
     return model;
