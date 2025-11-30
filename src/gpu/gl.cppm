@@ -55,6 +55,8 @@ enum class PolygonMode : GLenum {
 
 enum class Face : GLenum {
     front_and_back = GL_FRONT_AND_BACK,
+    front = GL_FRONT,
+    back  = GL_BACK,
 };
 
 enum class BlendFactor : GLenum {
@@ -139,6 +141,18 @@ inline void blend_func(BlendFactor src_factor, BlendFactor dst_factor) noexcept 
 
 inline void depth_mask(bool enable) noexcept {
     glDepthMask(enable ? GL_TRUE : GL_FALSE);
+}
+
+inline void enable_cull_face(bool enable) noexcept {
+    if (enable) {
+        glEnable(GL_CULL_FACE);
+    } else {
+        glDisable(GL_CULL_FACE);
+    }
+}
+
+inline void cull_face(Face face) noexcept {
+    glCullFace(static_cast<GLenum>(face));
 }
 
 [[nodiscard]] inline BufferId create_buffer() noexcept {

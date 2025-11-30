@@ -46,6 +46,13 @@ public:
     void set_depth_write(bool enabled) const noexcept {
         gpu::gl::depth_mask(enabled);
     }
+
+    void set_backface_culling(bool enabled, gpu::gl::Face culled_face = gpu::gl::Face::back) const noexcept {
+        gpu::gl::enable_cull_face(enabled);
+        if (enabled) {
+            gpu::gl::cull_face(culled_face);
+        }
+    }
 };
 
 } // namespace render

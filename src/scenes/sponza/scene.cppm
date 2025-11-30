@@ -15,6 +15,7 @@ export namespace scenes {
 struct Sponza {
     void on_init() {
         ctx_.set_depth_test(true);
+        ctx_.set_backface_culling(true);
         std::println("Sponza init: starting");
 
         const auto shader_dir = std::filesystem::path(__FILE__).parent_path();
