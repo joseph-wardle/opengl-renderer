@@ -65,6 +65,7 @@ int Application<Scene>::run() {
     wc.height = config_.height;
     wc.title  = config_.title;
 
+    std::println("App: creating window {}x{} \"{}\"", wc.width, wc.height, wc.title);
     auto window_expected = platform::Window::create(wc);
     if (!window_expected) {
         const auto& err = window_expected.error();
@@ -129,17 +130,20 @@ int Application<Scene>::run() {
         gpu::gl::shutdown();
         return 1;
     }
+    std::println("App: GLAD initialized");
 
     window.set_vsync(config_.vsync);
     gpu::gl::viewport(0, 0, config_.width, config_.height);
 
     scene_.on_init();
     scene_.on_resize(config_.width, config_.height);
+    std::println("App: scene initialized");
 
     ui::ImGuiLayer imgui{window};
     bool show_debug_ui = true;
 
     auto last_time = Clock::now();
+    bool logged_first_frame = false;
 
     while (!window.should_close()) {
         input.begin_frame();
@@ -162,6 +166,9 @@ int Application<Scene>::run() {
         const bool look_active = allow_input && input.is_mouse_down(platform::MouseButton::right);
         window.set_cursor_disabled(look_active);
 
+        if (!logged_first_frame) {
+            std::println("App: entering first frame update/render");
+        }
         scene_.on_update(DeltaTime{dt}, input, allow_input);
         scene_.on_render();
         if (show_debug_ui) {
@@ -170,6 +177,11 @@ int Application<Scene>::run() {
         imgui.end_frame();
 
         window.swap_buffers();
+
+        if (!logged_first_frame) {
+            std::println("App: first frame rendered (dt={:.4f}s)", dt);
+            logged_first_frame = true;
+        }
     }
 
     gpu::gl::shutdown();

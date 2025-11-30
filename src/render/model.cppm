@@ -15,9 +15,13 @@ struct Model {
         core::Vec3                     base_color{1.0f, 1.0f, 1.0f};
         std::shared_ptr<Texture2D>     diffuse_map{};
         std::shared_ptr<Texture2D>     specular_map{};
+        core::Vec3                     bounds_center{0.0f};
+        AlphaMode                      alpha_mode{AlphaMode::opaque};
 
         [[nodiscard]] bool has_diffuse() const noexcept { return static_cast<bool>(diffuse_map); }
         [[nodiscard]] bool has_specular() const noexcept { return static_cast<bool>(specular_map); }
+        [[nodiscard]] bool is_transparent() const noexcept { return alpha_mode == AlphaMode::blend; }
+        [[nodiscard]] bool is_alpha_mask() const noexcept { return alpha_mode == AlphaMode::mask; }
     };
     std::vector<Part> parts;
 };
@@ -28,10 +32,12 @@ struct ModelLoadError {
 
 inline std::expected<Model, ModelLoadError>
 load_obj_model(const std::filesystem::path& path) {
+    std::println("Loading OBJ model: {}", path.string());
     auto obj = tinyobj::load_obj(path);
     if (!obj) {
         return std::unexpected(ModelLoadError{obj.error().message});
     }
+    std::println("OBJ parsed: meshes={}", obj->meshes.size());
 
     Model model{};
     model.parts.reserve(obj->meshes.size());
@@ -39,6 +45,7 @@ load_obj_model(const std::filesystem::path& path) {
     const auto base_dir = path.parent_path();
     std::unordered_map<std::string, std::shared_ptr<Texture2D>> texture_cache{};
 
+    std::size_t mesh_index = 0;
     for (const auto& src : obj->meshes) {
         const bool has_normals   = src.normals.size() == src.positions.size();
         const bool has_texcoords = src.texcoords.size() / 2 == src.positions.size() / 3;
@@ -47,6 +54,16 @@ load_obj_model(const std::filesystem::path& path) {
         vertices.reserve(src.positions.size() / 3);
         std::vector<std::uint32_t> indices;
         indices.reserve(src.indices.size());
+        core::Vec3 min_pos{
+            std::numeric_limits<float>::max(),
+            std::numeric_limits<float>::max(),
+            std::numeric_limits<float>::max()
+        };
+        core::Vec3 max_pos{
+            std::numeric_limits<float>::lowest(),
+            std::numeric_limits<float>::lowest(),
+            std::numeric_limits<float>::lowest()
+        };
 
         for (std::size_t i = 0; i < src.positions.size(); i += 3) {
             Vertex v{};
@@ -74,6 +91,12 @@ load_obj_model(const std::filesystem::path& path) {
                 v.uv = core::Vec2{0.0f};
             }
             vertices.push_back(v);
+            min_pos.x = std::min(min_pos.x, v.position.x);
+            min_pos.y = std::min(min_pos.y, v.position.y);
+            min_pos.z = std::min(min_pos.z, v.position.z);
+            max_pos.x = std::max(max_pos.x, v.position.x);
+            max_pos.y = std::max(max_pos.y, v.position.y);
+            max_pos.z = std::max(max_pos.z, v.position.z);
         }
 
         indices.insert(indices.end(), src.indices.begin(), src.indices.end());
@@ -107,10 +130,15 @@ load_obj_model(const std::filesystem::path& path) {
             src.diffuse[1],
             src.diffuse[2],
         };
+        const bool has_positions = !vertices.empty();
 
         Model::Part part;
         part.mesh = std::move(*mesh);
         part.base_color = color;
+        part.bounds_center = has_positions ? (min_pos + max_pos) * 0.5f : core::Vec3{0.0f};
+        if (!std::isfinite(part.bounds_center.x) || !std::isfinite(part.bounds_center.y) || !std::isfinite(part.bounds_center.z)) {
+            part.bounds_center = core::Vec3{0.0f};
+        }
 
         auto load_texture = [&](const std::string& texname, std::shared_ptr<Texture2D>& out_tex) {
             if (texname.empty()) return;
@@ -137,10 +165,21 @@ load_obj_model(const std::filesystem::path& path) {
 
         load_texture(src.diffuse_tex, part.diffuse_map);
         load_texture(src.specular_tex, part.specular_map);
+        part.alpha_mode = part.diffuse_map ? part.diffuse_map->alpha_mode() : AlphaMode::opaque;
 
         model.parts.push_back(std::move(part));
+        std::println(
+            "  Mesh {:02}: verts={} indices={} diffuse={} spec={} alpha_mode={}",
+            mesh_index++,
+            vertices.size(),
+            indices.size(),
+            src.diffuse_tex.empty() ? "<none>" : src.diffuse_tex,
+            src.specular_tex.empty() ? "<none>" : src.specular_tex,
+            static_cast<int>(model.parts.back().alpha_mode)
+        );
     }
 
+    std::println("Model loaded: parts={}", model.parts.size());
     return model;
 }
 

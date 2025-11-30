@@ -57,6 +57,13 @@ enum class Face : GLenum {
     front_and_back = GL_FRONT_AND_BACK,
 };
 
+enum class BlendFactor : GLenum {
+    zero = GL_ZERO,
+    one = GL_ONE,
+    src_alpha = GL_SRC_ALPHA,
+    one_minus_src_alpha = GL_ONE_MINUS_SRC_ALPHA,
+};
+
 enum class TextureTarget : GLenum {
     texture_2d = GL_TEXTURE_2D,
 };
@@ -116,6 +123,22 @@ inline void enable_depth_test(bool enable) noexcept {
     } else {
         glDisable(GL_DEPTH_TEST);
     }
+}
+
+inline void enable_blend(bool enable) noexcept {
+    if (enable) {
+        glEnable(GL_BLEND);
+    } else {
+        glDisable(GL_BLEND);
+    }
+}
+
+inline void blend_func(BlendFactor src_factor, BlendFactor dst_factor) noexcept {
+    glBlendFunc(static_cast<GLenum>(src_factor), static_cast<GLenum>(dst_factor));
+}
+
+inline void depth_mask(bool enable) noexcept {
+    glDepthMask(enable ? GL_TRUE : GL_FALSE);
 }
 
 [[nodiscard]] inline BufferId create_buffer() noexcept {

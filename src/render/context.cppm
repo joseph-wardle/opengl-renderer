@@ -32,7 +32,20 @@ public:
     void set_depth_test(bool enabled) const noexcept {
         gpu::gl::enable_depth_test(enabled);
     }
+
+    void set_alpha_blending(bool enabled) const noexcept {
+        gpu::gl::enable_blend(enabled);
+        if (enabled) {
+            gpu::gl::blend_func(
+                gpu::gl::BlendFactor::src_alpha,
+                gpu::gl::BlendFactor::one_minus_src_alpha
+            );
+        }
+    }
+
+    void set_depth_write(bool enabled) const noexcept {
+        gpu::gl::depth_mask(enabled);
+    }
 };
 
 } // namespace render
-

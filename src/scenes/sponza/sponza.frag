@@ -22,8 +22,14 @@ void main()
     vec3 H = normalize(L + V);
 
     vec3 albedo = uBaseColor;
+    float alpha = 1.0;
     if (uHasDiffuseMap) {
-        albedo = texture(uDiffuseMap, vUV).rgb;
+        vec4 sampled = texture(uDiffuseMap, vUV);
+        albedo = sampled.rgb;
+        alpha = sampled.a;
+    }
+    if (alpha <= 0.001) {
+        discard;
     }
 
     float diff = max(dot(N, L), 0.0);
@@ -42,5 +48,5 @@ void main()
     vec3 diffuse = diff * albedo * uLightColor;
     vec3 specular = spec * uLightColor;
 
-    FragColor = vec4(ambient + diffuse + specular, 1.0);
+    FragColor = vec4(ambient + diffuse + specular, alpha);
 }
